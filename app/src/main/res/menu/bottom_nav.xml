@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_eq"
+        android:icon="@drawable/ic_eq"
+        android:title="@string/tab_eq" />
+    <item
+        android:id="@+id/nav_player"
+        android:icon="@drawable/ic_music"
+        android:title="@string/tab_player" />
+    <item
+        android:id="@+id/nav_profiles"
+        android:icon="@drawable/ic_headphones"
+        android:title="@string/tab_profiles" />
+</menu>

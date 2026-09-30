@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Orbit EQ</string>
+    <string name="tile_label">Orbit EQ</string>
+    <string name="system_wide">System-wide</string>
+    <string name="global_on">Shaping sound in all apps</string>
+    <string name="global_off">System-wide EQ is off</string>
+
+    <string name="tab_eq">Equalizer</string>
+    <string name="tab_player">8D Player</string>
+    <string name="tab_profiles">Headphones</string>
+
+    <string name="viz_hint">Tap to show a live visualizer (needs microphone permission to read the audio output)</string>
+    <string name="viz_live">Live output</string>
+    <string name="viz_unsupported">This phone doesn\'t allow a system-wide visualizer</string>
+    <string name="equalizer">Equalizer</string>
+    <string name="reset">Reset</string>
+    <string name="effects">Effects</string>
+    <string name="reverb">Reverb</string>
+    <string name="lbl_bass">Bass boost · %1$d%%</string>
+    <string name="lbl_spatial">3D Surround (Atmos-style) · %1$d%%</string>
+    <string name="lbl_loud">Loudness · +%1$.1f dB</string>
+    <string name="lbl_preamp">Preamp · %1$+.1f dB</string>
+    <string name="status_off">Turn on System-wide to apply this sound to Spotify, YouTube and other apps. The 8D Player tab always uses it.</string>
+    <string name="status_ok">Active on all apps · %1$d app session(s) linked</string>
+    <string name="status_partial">Active, but this phone blocks: %1$s</string>
+    <string name="status_failed">This phone blocked system-wide effects. The 8D Player still works.</string>
+
+    <string name="no_song">No song loaded</string>
+    <string name="open_hint">Open a song from your phone to hear 8D and surround</string>
+    <string name="now_playing">Playing with Orbit effects</string>
+    <string name="paused">Paused</string>
+    <string name="open">Open</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Stop</string>
+    <string name="eight_d">8D Audio</string>
+    <string name="eight_d_sub">Sound circles around your head. Use headphones.</string>
+    <string name="lbl_8d_speed">Rotation · one circle every %1$.1f s</string>
+    <string name="lbl_8d_depth">Effect strength · %1$d%%</string>
+    <string name="player_hint">The player uses your Equalizer, bass, surround and reverb settings too. Turn System-wide off while using it so the EQ isn\'t applied twice.</string>
+
+    <string name="headphones">Headphones</string>
+    <string name="device_now">Connected: %1$s</string>
+    <string name="device_none">No headphones connected (phone speaker)</string>
+    <string name="link_device">Link current sound to these headphones</string>
+    <string name="no_links">No linked headphones yet. Linked sounds load automatically when those headphones connect (while System-wide is on).</string>
+    <string name="connect_first">Connect your headphones first</string>
+    <string name="linked">Linked to %1$s</string>
+    <string name="hp_starting">Headphone starting points</string>
+    <string name="hp_starting_sub">General tuning by headphone type. Fine-tune it on the Equalizer tab.</string>
+    <string name="my_profiles">My profiles</string>
+    <string name="save_current">Save current</string>
+    <string name="no_profiles">No saved profiles yet. Long-press a profile to delete it.</string>
+    <string name="save_title">Save current sound</string>
+    <string name="profile_name">Profile name</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="delete_q">Delete %1$s?</string>
+    <string name="applied">%1$s applied</string>
+    <string name="turn_off">Turn off</string>
+</resources>

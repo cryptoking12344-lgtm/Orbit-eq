@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF0A0A0F</color>
+    <color name="surface">#FF15151D</color>
+    <color name="surface2">#FF222230</color>
+    <color name="grid">#FF2A2A38</color>
+    <color name="accent">#FFA78BFA</color>
+    <color name="accent2">#FF22D3EE</color>
+    <color name="accent_dim">#FF3B2F66</color>
+    <color name="text">#FFF4F4F8</color>
+    <color name="text_dim">#FF9A9AAE</color>
+    <color name="black">#FF000000</color>
+    <color name="icon_bg">#FF0A0A0F</color>
+</resources>
