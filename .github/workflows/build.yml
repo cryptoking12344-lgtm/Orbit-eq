@@ -30,7 +30,24 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build the APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
+
+      - name: Report build errors on the commit
+        if: failure()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Build failed. Errors:"
+            echo '```'
+            grep -E "^e: |error:|What went wrong|FAILED|Exception" build.log | head -60 || true
+            echo '```'
+          } > report.md
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@report.md
 
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk OrbitEQ.apk
@@ -42,7 +59,6 @@ jobs:
           path: OrbitEQ.apk
 
       - name: Publish to Releases (easy phone download)
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}

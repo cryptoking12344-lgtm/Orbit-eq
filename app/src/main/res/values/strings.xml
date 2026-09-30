@@ -60,4 +60,21 @@
     <string name="delete_q">Delete %1$s?</string>
     <string name="applied">%1$s applied</string>
     <string name="turn_off">Turn off</string>
+
+    <string name="theater">Theater</string>
+    <string name="theater_sub">Virtual 7.1.4 cinema for headphones</string>
+    <string name="test_hint">Tap a speaker to hear it, or test them all</string>
+    <string name="test_all">Speaker test</string>
+    <string name="test_stop">Stop test</string>
+    <string name="test_now">Playing: %1$s</string>
+    <string name="room">Room</string>
+    <string name="lbl_immersion">Immersion · %1$s</string>
+    <string name="imm_real">Real cinema</string>
+    <string name="imm_mid">Big screen</string>
+    <string name="imm_wow">Wow</string>
+    <string name="lbl_vocal">Vocal focus · %1$d%%</string>
+    <string name="lbl_sub">Sub punch · %1$d%%</string>
+    <string name="xm4_fix">Sony WH-1000XM4 tuning</string>
+    <string name="xm4_fix_sub">Evens out the XM4\'s sound for a natural cinema</string>
+    <string name="eight_d_off_theater">Off while Theater is on</string>
 </resources>

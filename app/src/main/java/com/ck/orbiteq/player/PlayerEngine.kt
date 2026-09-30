@@ -325,7 +325,7 @@ object PlayerEngine {
                         val v = AudioState.version
                         if (v != dspVersion) {
                             dspVersion = v
-                            dsp.configure(AudioState.eq, AudioState.eightD)
+                            dsp.configure(AudioState.eq, AudioState.eightD, AudioState.theater)
                         }
                         dsp.process(stereo, frames)
 

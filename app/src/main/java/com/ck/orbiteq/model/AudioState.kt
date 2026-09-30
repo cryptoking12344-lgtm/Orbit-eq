@@ -23,6 +23,30 @@ object AudioState {
     @Volatile var eightD: EightD = EightD()
         private set
 
+    /** Virtual 7.1.4 cinema for headphones (8D Player only). */
+    class Theater(
+        val enabled: Boolean = false,
+        val room: Int = 1,
+        val immersion: Float = 0.5f,
+        val vocal: Float = 0.6f,
+        val sub: Float = 0.4f,
+        val headphoneFix: Boolean = true,
+    ) {
+        fun copy(
+            enabled: Boolean = this.enabled,
+            room: Int = this.room,
+            immersion: Float = this.immersion,
+            vocal: Float = this.vocal,
+            sub: Float = this.sub,
+            headphoneFix: Boolean = this.headphoneFix,
+        ) = Theater(enabled, room, immersion, vocal, sub, headphoneFix)
+
+        fun toParams() = com.ck.orbiteq.dsp.TheaterParams(room, immersion, vocal, sub, headphoneFix)
+    }
+
+    @Volatile var theater: Theater = Theater()
+        private set
+
     /** Bumped on every change so the audio thread knows to reconfigure. */
     @Volatile var version: Int = 0
         private set
@@ -43,6 +67,14 @@ object AudioState {
             p.getBoolean("8d_on", false),
             p.getFloat("8d_speed", 0.12f).coerceIn(0.03f, 0.4f),
             p.getFloat("8d_depth", 0.85f).coerceIn(0f, 1f),
+        )
+        theater = Theater(
+            p.getBoolean("th_on", false),
+            p.getInt("th_room", 1).coerceIn(0, 2),
+            p.getFloat("th_imm", 0.5f).coerceIn(0f, 1f),
+            p.getFloat("th_vocal", 0.6f).coerceIn(0f, 1f),
+            p.getFloat("th_sub", 0.4f).coerceIn(0f, 1f),
+            p.getBoolean("th_fix", true),
         )
         version++
     }
@@ -70,6 +102,22 @@ object AudioState {
             ?.putFloat("8d_speed", e.speedHz)
             ?.putFloat("8d_depth", e.depth)
             ?.apply()
+        notifyListeners()
+    }
+
+    fun setTheater(t: Theater, persist: Boolean = true) {
+        theater = t
+        version++
+        if (persist) {
+            prefs?.edit()
+                ?.putBoolean("th_on", t.enabled)
+                ?.putInt("th_room", t.room)
+                ?.putFloat("th_imm", t.immersion)
+                ?.putFloat("th_vocal", t.vocal)
+                ?.putFloat("th_sub", t.sub)
+                ?.putBoolean("th_fix", t.headphoneFix)
+                ?.apply()
+        }
         notifyListeners()
     }
 

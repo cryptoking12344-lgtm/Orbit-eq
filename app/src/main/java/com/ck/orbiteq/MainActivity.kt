@@ -27,8 +27,11 @@ import com.ck.orbiteq.model.AudioState
 import com.ck.orbiteq.model.EqSettings
 import com.ck.orbiteq.model.Presets
 import com.ck.orbiteq.model.Profile
+import com.ck.orbiteq.dsp.TheaterProcessor
 import com.ck.orbiteq.player.PlayerEngine
+import com.ck.orbiteq.player.SpeakerTest
 import com.ck.orbiteq.ui.EqCurveView
+import com.ck.orbiteq.ui.SpeakerMapView
 import com.ck.orbiteq.ui.VisualizerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
@@ -40,7 +43,7 @@ import com.google.android.material.slider.Slider
 import java.util.Locale
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
+class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Listener {
 
     // header
     private lateinit var switchGlobal: MaterialSwitch
@@ -76,6 +79,23 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
     private lateinit var slider8dDepth: Slider
     private lateinit var lbl8dSpeed: TextView
     private lateinit var lbl8dDepth: TextView
+
+    // theater
+    private lateinit var switchTheater: MaterialSwitch
+    private lateinit var speakerMap: SpeakerMapView
+    private lateinit var txtTestNow: TextView
+    private lateinit var btnSpeakerTest: MaterialButton
+    private lateinit var chipsRoom: ChipGroup
+    private lateinit var sliderImmersion: Slider
+    private lateinit var sliderVocal: Slider
+    private lateinit var sliderSub: Slider
+    private lateinit var lblImmersion: TextView
+    private lateinit var lblVocal: TextView
+    private lateinit var lblSub: TextView
+    private lateinit var switchHpFix: MaterialSwitch
+    private lateinit var card8d: View
+    private lateinit var txt8dSub: TextView
+    private val roomChips = ArrayList<Chip>()
 
     // headphones page
     private lateinit var txtDevice: TextView
@@ -126,6 +146,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
         setupNav()
         setupEq()
         setupPlayer()
+        setupTheater()
         setupProfiles()
         handleEffectIntent(intent)
     }
@@ -139,6 +160,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
         super.onResume()
         AudioState.addListener(stateListener)
         PlayerEngine.addListener(this)
+        SpeakerTest.listener = this
         refreshSound()
         onPlaybackState(PlayerEngine.state)
         refreshProfiles()
@@ -150,6 +172,9 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
         super.onPause()
         AudioState.removeListener(stateListener)
         PlayerEngine.removeListener(this)
+        SpeakerTest.listener = null
+        SpeakerTest.stop()
+        onTestSpeaker(-1)
         handler.removeCallbacks(statusPoll)
         stopGlobalViz()
     }
@@ -190,6 +215,21 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
         slider8dDepth = findViewById(R.id.slider8dDepth)
         lbl8dSpeed = findViewById(R.id.lbl8dSpeed)
         lbl8dDepth = findViewById(R.id.lbl8dDepth)
+
+        switchTheater = findViewById(R.id.switchTheater)
+        speakerMap = findViewById(R.id.speakerMap)
+        txtTestNow = findViewById(R.id.txtTestNow)
+        btnSpeakerTest = findViewById(R.id.btnSpeakerTest)
+        chipsRoom = findViewById(R.id.chipsRoom)
+        sliderImmersion = findViewById(R.id.sliderImmersion)
+        sliderVocal = findViewById(R.id.sliderVocal)
+        sliderSub = findViewById(R.id.sliderSub)
+        lblImmersion = findViewById(R.id.lblImmersion)
+        lblVocal = findViewById(R.id.lblVocal)
+        lblSub = findViewById(R.id.lblSub)
+        switchHpFix = findViewById(R.id.switchHpFix)
+        card8d = findViewById(R.id.card8d)
+        txt8dSub = findViewById(R.id.txt8dSub)
 
         txtDevice = findViewById(R.id.txtDevice)
         txtLinks = findViewById(R.id.txtLinks)
@@ -287,6 +327,33 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
         setSlider(slider8dDepth, e.depth)
         lbl8dSpeed.text = getString(R.string.lbl_8d_speed, 1f / e.speedHz)
         lbl8dDepth.text = getString(R.string.lbl_8d_depth, (e.depth * 100).roundToInt())
+
+        val t = AudioState.theater
+        suppress = true
+        switchTheater.isChecked = t.enabled
+        switchHpFix.isChecked = t.headphoneFix
+        suppress = false
+        setSlider(sliderImmersion, t.immersion)
+        setSlider(sliderVocal, t.vocal)
+        setSlider(sliderSub, t.sub)
+        roomChips.forEachIndexed { i, c -> c.isChecked = i == t.room }
+        val immName = when {
+            t.immersion < 0.34f -> R.string.imm_real
+            t.immersion < 0.67f -> R.string.imm_mid
+            else -> R.string.imm_wow
+        }
+        lblImmersion.text = getString(R.string.lbl_immersion, getString(immName))
+        lblVocal.text = getString(R.string.lbl_vocal, (t.vocal * 100).roundToInt())
+        lblSub.text = getString(R.string.lbl_sub, (t.sub * 100).roundToInt())
+        speakerMap.setImmersion(t.immersion)
+        speakerMap.setOn(t.enabled)
+
+        // Theater replaces the 8D effect while it's on.
+        card8d.alpha = if (t.enabled) 0.45f else 1f
+        switch8d.isEnabled = !t.enabled
+        slider8dSpeed.isEnabled = !t.enabled
+        slider8dDepth.isEnabled = !t.enabled
+        txt8dSub.text = getString(if (t.enabled) R.string.eight_d_off_theater else R.string.eight_d_sub)
     }
 
     private fun enableGlobal() {
@@ -418,6 +485,44 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener {
         bindSlider(slider8dDepth) { v, _ ->
             val e = AudioState.eightD
             AudioState.setEightD(AudioState.EightD(e.enabled, e.speedHz, v))
+        }
+    }
+
+    // ------------------------------------------------------------------ theater
+
+    private fun setupTheater() {
+        switchTheater.setOnCheckedChangeListener { _, checked ->
+            if (suppress) return@setOnCheckedChangeListener
+            AudioState.setTheater(AudioState.theater.copy(enabled = checked))
+        }
+        switchHpFix.setOnCheckedChangeListener { _, checked ->
+            if (suppress) return@setOnCheckedChangeListener
+            AudioState.setTheater(AudioState.theater.copy(headphoneFix = checked))
+        }
+        TheaterProcessor.ROOM_NAMES.forEachIndexed { i, name ->
+            val chip = newChip(chipsRoom, name, checkable = true)
+            chip.setOnClickListener { AudioState.setTheater(AudioState.theater.copy(room = i)) }
+            roomChips.add(chip)
+            chipsRoom.addView(chip)
+        }
+        bindSlider(sliderImmersion) { v, done -> AudioState.setTheater(AudioState.theater.copy(immersion = v), done) }
+        bindSlider(sliderVocal) { v, done -> AudioState.setTheater(AudioState.theater.copy(vocal = v), done) }
+        bindSlider(sliderSub) { v, done -> AudioState.setTheater(AudioState.theater.copy(sub = v), done) }
+
+        speakerMap.onSpeakerTapped = { i -> SpeakerTest.playOne(i) }
+        btnSpeakerTest.setOnClickListener {
+            if (SpeakerTest.isRunning) SpeakerTest.stop() else SpeakerTest.playAll()
+        }
+    }
+
+    override fun onTestSpeaker(index: Int) {
+        speakerMap.setActive(index)
+        if (index >= 0) {
+            txtTestNow.text = getString(R.string.test_now, TheaterProcessor.NAMES[index])
+            btnSpeakerTest.text = getString(R.string.test_stop)
+        } else {
+            txtTestNow.text = getString(R.string.test_hint)
+            btnSpeakerTest.text = getString(R.string.test_all)
         }
     }
 

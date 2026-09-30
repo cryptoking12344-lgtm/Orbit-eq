@@ -46,10 +46,16 @@ class DspChain(sampleRate: Int) {
     private val spatial = Spatializer(sampleRate)
     private val reverb = Reverb(sampleRate)
     private val limiter = Limiter(sampleRate)
+    private val theater = TheaterProcessor(sampleRate)
+    private var theaterOn = false
 
     private fun dbToLin(db: Float) = 10.0.pow(db / 20.0).toFloat()
 
-    fun configure(s: EqSettings, e: AudioState.EightD) {
+    fun configure(s: EqSettings, e: AudioState.EightD, t: AudioState.Theater) {
+        if (t.enabled && !theaterOn) theater.reset()
+        theaterOn = t.enabled
+        theater.configure(t.toParams())
+
         var maxBoost = 0f
         for (i in 0 until EqSettings.BANDS) {
             val g = s.gains[i].toDouble()
@@ -85,6 +91,7 @@ class DspChain(sampleRate: Int) {
         eightD.reset()
         spatial.reset()
         reverb.reset()
+        theater.reset()
         limiter.reset()
     }
 
@@ -108,9 +115,14 @@ class DspChain(sampleRate: Int) {
                 buf[2 * n + 1] = r
             }
         }
-        eightD.process(buf, frames)
-        spatial.process(buf, frames)
-        reverb.process(buf, frames)
+        if (theaterOn) {
+            // Theater replaces 8D, surround and reverb with the full 7.1.4 room.
+            theater.process(buf, frames)
+        } else {
+            eightD.process(buf, frames)
+            spatial.process(buf, frames)
+            reverb.process(buf, frames)
+        }
         if (loud != 1f) {
             for (i in 0 until frames * 2) buf[i] *= loud
         }

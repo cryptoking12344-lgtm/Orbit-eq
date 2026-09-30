@@ -53,6 +53,29 @@ class Biquad {
         )
     }
 
+    fun setHighShelf(fs: Double, f0: Double, gainDb: Double, q: Double = 0.707) {
+        val a = 10.0.pow(gainDb / 40.0)
+        val w0 = 2.0 * PI * safeFreq(fs, f0) / fs
+        val c = cos(w0)
+        val alpha = sin(w0) / (2.0 * q)
+        val sa = 2.0 * sqrt(a) * alpha
+        set(
+            a * ((a + 1) + (a - 1) * c + sa),
+            -2 * a * ((a - 1) + (a + 1) * c),
+            a * ((a + 1) + (a - 1) * c - sa),
+            (a + 1) - (a - 1) * c + sa,
+            2 * ((a - 1) - (a + 1) * c),
+            (a + 1) - (a - 1) * c - sa,
+        )
+    }
+
+    fun setHighPass(fs: Double, f0: Double, q: Double = 0.707) {
+        val w0 = 2.0 * PI * safeFreq(fs, f0) / fs
+        val c = cos(w0)
+        val alpha = sin(w0) / (2.0 * q)
+        set((1 + c) / 2, -(1 + c), (1 + c) / 2, 1 + alpha, -2 * c, 1 - alpha)
+    }
+
     fun setLowPass(fs: Double, f0: Double, q: Double = 0.707) {
         val w0 = 2.0 * PI * safeFreq(fs, f0) / fs
         val c = cos(w0)
