@@ -235,8 +235,8 @@ class OnePole {
     }
 
     /** Brown & Duda spherical-head shadow: gain 1 at low frequency, alpha at high frequency. */
-    fun setHeadShadow(fs: Double, alpha: Double) {
-        val w0 = TheaterProcessor.SOUND_SPEED / TheaterProcessor.HEAD_RADIUS
+    fun setHeadShadow(fs: Double, alpha: Double, headRadius: Double = TheaterProcessor.HEAD_RADIUS) {
+        val w0 = TheaterProcessor.SOUND_SPEED / headRadius
         val k = 2.0 * fs
         val a0 = k + 2 * w0
         b0 = (alpha * k + 2 * w0) / a0
@@ -262,7 +262,7 @@ class VirtualSpeaker(sampleRate: Int) {
     var outR = 0f
         private set
 
-    fun place(azDeg: Double, elDeg: Double) {
+    fun place(azDeg: Double, elDeg: Double, headRadius: Double = TheaterProcessor.HEAD_RADIUS) {
         val az = Math.toRadians(azDeg)
         val el = Math.toRadians(elDeg)
         val sx = cos(el) * cos(az)       // forward
@@ -271,13 +271,13 @@ class VirtualSpeaker(sampleRate: Int) {
 
         // Interaural time difference (Woodworth), far ear is delayed.
         val lat = asin(sy.coerceIn(-1.0, 1.0))
-        val itd = TheaterProcessor.HEAD_RADIUS / TheaterProcessor.SOUND_SPEED * (abs(lat) + sin(abs(lat))) * fs
+        val itd = headRadius / TheaterProcessor.SOUND_SPEED * (abs(lat) + sin(abs(lat))) * fs
         delayL = if (sy > 0) itd else 0.0
         delayR = if (sy < 0) itd else 0.0
 
         // Head shadow for each ear.
-        shadowR.setHeadShadow(fs, shadowAlpha(acos(sy.coerceIn(-1.0, 1.0))))
-        shadowL.setHeadShadow(fs, shadowAlpha(acos((-sy).coerceIn(-1.0, 1.0))))
+        shadowR.setHeadShadow(fs, shadowAlpha(acos(sy.coerceIn(-1.0, 1.0))), headRadius)
+        shadowL.setHeadShadow(fs, shadowAlpha(acos((-sy).coerceIn(-1.0, 1.0))), headRadius)
 
         // Direction cues from the outer ear (front / behind / above).
         val front = max(0.0, sx)
@@ -453,10 +453,10 @@ class TheaterProcessor(sampleRate: Int) {
         private val ER_GAIN = floatArrayOf(0.30f, 0.30f, 0.40f, 0.40f, 0.22f, 0.22f, 0.26f, 0.26f, 0.17f, 0.17f, 0.13f, 0.13f)
 
         // Sony WH-1000XM4 correction (AutoEQ, oratory1990 measurement): type 0 PK, 1 LSC, 2 HSC
-        private val FIX_TYPE = intArrayOf(1, 0, 0, 0, 0, 2, 0, 0, 0, 0)
-        private val FIX_F = doubleArrayOf(105.0, 143.0, 2289.0, 56.0, 5144.0, 10000.0, 407.0, 6715.0, 1007.0, 576.0)
-        private val FIX_G = doubleArrayOf(-4.2, -5.2, 6.1, 1.2, -3.2, -1.0, 1.7, 3.0, 1.0, -1.2)
-        private val FIX_Q = doubleArrayOf(0.70, 1.10, 1.57, 1.19, 6.00, 0.70, 3.14, 5.99, 3.41, 3.55)
+        internal val FIX_TYPE = intArrayOf(1, 0, 0, 0, 0, 2, 0, 0, 0, 0)
+        internal val FIX_F = doubleArrayOf(105.0, 143.0, 2289.0, 56.0, 5144.0, 10000.0, 407.0, 6715.0, 1007.0, 576.0)
+        internal val FIX_G = doubleArrayOf(-4.2, -5.2, 6.1, 1.2, -3.2, -1.0, 1.7, 3.0, 1.0, -1.2)
+        internal val FIX_Q = doubleArrayOf(0.70, 1.10, 1.57, 1.19, 6.00, 0.70, 3.14, 5.99, 3.41, 3.55)
     }
 
     private val fs = sampleRate

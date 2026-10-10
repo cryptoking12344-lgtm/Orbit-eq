@@ -30,6 +30,7 @@ import com.ck.orbiteq.model.AudioState
 import com.ck.orbiteq.model.EqSettings
 import com.ck.orbiteq.model.Presets
 import com.ck.orbiteq.model.Profile
+import com.ck.orbiteq.dsp.Space360Processor
 import com.ck.orbiteq.dsp.TheaterProcessor
 import com.ck.orbiteq.player.PlayerEngine
 import com.ck.orbiteq.player.SpeakerTest
@@ -42,6 +43,7 @@ import java.io.File
 import com.ck.orbiteq.ui.VisualizerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -81,11 +83,6 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private lateinit var txtDur: TextView
     private lateinit var sliderSeek: Slider
     private lateinit var btnPlay: MaterialButton
-    private lateinit var switch8d: MaterialSwitch
-    private lateinit var slider8dSpeed: Slider
-    private lateinit var slider8dDepth: Slider
-    private lateinit var lbl8dSpeed: TextView
-    private lateinit var lbl8dDepth: TextView
 
     // youtube
     private lateinit var editYt: TextInputEditText
@@ -95,7 +92,19 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private lateinit var bottomNav: BottomNavigationView
 
     // theater
-    private lateinit var switchTheater: MaterialSwitch
+    private lateinit var toggleMode: MaterialButtonToggleGroup
+    private lateinit var txtModeSub: TextView
+    private lateinit var panelSpatial: View
+    private lateinit var panelTheater: View
+    private lateinit var panel360: View
+    private lateinit var sliderWrap: Slider
+    private lateinit var sliderHeight: Slider
+    private lateinit var sliderRotate: Slider
+    private lateinit var lblWrap: TextView
+    private lateinit var lblHeight: TextView
+    private lateinit var lblRotate: TextView
+    private lateinit var chipsHead: ChipGroup
+    private val headChips = ArrayList<Chip>()
     private lateinit var speakerMap: SpeakerMapView
     private lateinit var txtTestNow: TextView
     private lateinit var btnSpeakerTest: MaterialButton
@@ -107,8 +116,6 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private lateinit var lblVocal: TextView
     private lateinit var lblSub: TextView
     private lateinit var switchHpFix: MaterialSwitch
-    private lateinit var card8d: View
-    private lateinit var txt8dSub: TextView
     private val roomChips = ArrayList<Chip>()
 
     // headphones page
@@ -232,11 +239,6 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         txtDur = findViewById(R.id.txtDur)
         sliderSeek = findViewById(R.id.sliderSeek)
         btnPlay = findViewById(R.id.btnPlay)
-        switch8d = findViewById(R.id.switch8d)
-        slider8dSpeed = findViewById(R.id.slider8dSpeed)
-        slider8dDepth = findViewById(R.id.slider8dDepth)
-        lbl8dSpeed = findViewById(R.id.lbl8dSpeed)
-        lbl8dDepth = findViewById(R.id.lbl8dDepth)
 
         editYt = findViewById(R.id.editYt)
         btnYtPlay = findViewById(R.id.btnYtPlay)
@@ -244,7 +246,18 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         txtYtStatus = findViewById(R.id.txtYtStatus)
         bottomNav = findViewById(R.id.bottomNav)
 
-        switchTheater = findViewById(R.id.switchTheater)
+        toggleMode = findViewById(R.id.toggleMode)
+        txtModeSub = findViewById(R.id.txtModeSub)
+        panelSpatial = findViewById(R.id.panelSpatial)
+        panelTheater = findViewById(R.id.panelTheater)
+        panel360 = findViewById(R.id.panel360)
+        sliderWrap = findViewById(R.id.sliderWrap)
+        sliderHeight = findViewById(R.id.sliderHeight)
+        sliderRotate = findViewById(R.id.sliderRotate)
+        lblWrap = findViewById(R.id.lblWrap)
+        lblHeight = findViewById(R.id.lblHeight)
+        lblRotate = findViewById(R.id.lblRotate)
+        chipsHead = findViewById(R.id.chipsHead)
         speakerMap = findViewById(R.id.speakerMap)
         txtTestNow = findViewById(R.id.txtTestNow)
         btnSpeakerTest = findViewById(R.id.btnSpeakerTest)
@@ -256,8 +269,6 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         lblVocal = findViewById(R.id.lblVocal)
         lblSub = findViewById(R.id.lblSub)
         switchHpFix = findViewById(R.id.switchHpFix)
-        card8d = findViewById(R.id.card8d)
-        txt8dSub = findViewById(R.id.txt8dSub)
 
         txtDevice = findViewById(R.id.txtDevice)
         txtLinks = findViewById(R.id.txtLinks)
@@ -347,18 +358,17 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         lblPreamp.text = getString(R.string.lbl_preamp, s.preamp)
         reverbChips.forEachIndexed { i, c -> c.isChecked = i == s.reverb }
 
-        val e = AudioState.eightD
-        suppress = true
-        switch8d.isChecked = e.enabled
-        suppress = false
-        setSlider(slider8dSpeed, e.speedHz)
-        setSlider(slider8dDepth, e.depth)
-        lbl8dSpeed.text = getString(R.string.lbl_8d_speed, 1f / e.speedHz)
-        lbl8dDepth.text = getString(R.string.lbl_8d_depth, (e.depth * 100).roundToInt())
-
         val t = AudioState.theater
+        val sp = AudioState.space
+        val mode = AudioState.mode
         suppress = true
-        switchTheater.isChecked = t.enabled
+        toggleMode.check(
+            when (mode) {
+                AudioState.MODE_THEATER -> R.id.modeTheater
+                AudioState.MODE_360 -> R.id.mode360
+                else -> R.id.modeOff
+            }
+        )
         switchHpFix.isChecked = t.headphoneFix
         suppress = false
         setSlider(sliderImmersion, t.immersion)
@@ -374,14 +384,39 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         lblVocal.text = getString(R.string.lbl_vocal, (t.vocal * 100).roundToInt())
         lblSub.text = getString(R.string.lbl_sub, (t.sub * 100).roundToInt())
         speakerMap.setImmersion(t.immersion)
-        speakerMap.setOn(t.enabled)
 
-        // Theater replaces the 8D effect while it's on.
-        card8d.alpha = if (t.enabled) 0.45f else 1f
-        switch8d.isEnabled = !t.enabled
-        slider8dSpeed.isEnabled = !t.enabled
-        slider8dDepth.isEnabled = !t.enabled
-        txt8dSub.text = getString(if (t.enabled) R.string.eight_d_off_theater else R.string.eight_d_sub)
+        setSlider(sliderWrap, sp.wrap)
+        setSlider(sliderHeight, sp.height)
+        setSlider(sliderRotate, sp.rotation)
+        lblWrap.text = getString(R.string.lbl_wrap, Space360Processor.wrapDegrees(sp.wrap).roundToInt())
+        lblHeight.text = getString(R.string.lbl_height, (sp.height * 100).roundToInt())
+        val rot = sp.rotation.roundToInt()
+        lblRotate.text = getString(
+            R.string.lbl_rotate,
+            when {
+                rot == 0 -> getString(R.string.rot_front)
+                rot > 0 -> getString(R.string.rot_right, rot)
+                else -> getString(R.string.rot_left, -rot)
+            }
+        )
+        headChips.forEachIndexed { i, c -> c.isChecked = i == sp.headSize }
+        speakerMap.setSpace(sp.wrap, sp.rotation)
+
+        txtModeSub.text = getString(
+            when (mode) {
+                AudioState.MODE_THEATER -> R.string.mode_sub_theater
+                AudioState.MODE_360 -> R.string.mode_sub_360
+                else -> R.string.mode_sub_off
+            }
+        )
+        panelSpatial.visibility = if (mode == AudioState.MODE_OFF) View.GONE else View.VISIBLE
+        panelTheater.visibility = if (mode == AudioState.MODE_THEATER) View.VISIBLE else View.GONE
+        panel360.visibility = if (mode == AudioState.MODE_360) View.VISIBLE else View.GONE
+        speakerMap.setMode(if (mode == AudioState.MODE_360) SpeakerMapView.SPACE else SpeakerMapView.THEATER)
+        if (!SpeakerTest.isRunning) {
+            txtTestNow.text = getString(if (mode == AudioState.MODE_360) R.string.map_hint_360 else R.string.test_hint)
+        }
+        suppress = false
     }
 
     private fun enableGlobal() {
@@ -501,28 +536,36 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
             if (fromUser) txtPos.text = fmt((value * PlayerEngine.state.durationMs).toLong())
         }
 
-        switch8d.setOnCheckedChangeListener { _, checked ->
-            if (suppress) return@setOnCheckedChangeListener
-            val e = AudioState.eightD
-            AudioState.setEightD(AudioState.EightD(checked, e.speedHz, e.depth))
-        }
-        bindSlider(slider8dSpeed) { v, _ ->
-            val e = AudioState.eightD
-            AudioState.setEightD(AudioState.EightD(e.enabled, v, e.depth))
-        }
-        bindSlider(slider8dDepth) { v, _ ->
-            val e = AudioState.eightD
-            AudioState.setEightD(AudioState.EightD(e.enabled, e.speedHz, v))
-        }
     }
 
     // ------------------------------------------------------------------ theater
 
     private fun setupTheater() {
-        switchTheater.setOnCheckedChangeListener { _, checked ->
-            if (suppress) return@setOnCheckedChangeListener
-            AudioState.setTheater(AudioState.theater.copy(enabled = checked))
+        toggleMode.addOnButtonCheckedListener { _, id, isChecked ->
+            if (suppress || !isChecked) return@addOnButtonCheckedListener
+            val m = when (id) {
+                R.id.modeTheater -> AudioState.MODE_THEATER
+                R.id.mode360 -> AudioState.MODE_360
+                else -> AudioState.MODE_OFF
+            }
+            if (m != AudioState.mode) {
+                SpeakerTest.stop()
+                AudioState.setMode(m)
+            }
         }
+        bindSlider(sliderWrap) { v, done -> AudioState.setSpace(AudioState.space.copy(wrap = v), done) }
+        bindSlider(sliderHeight) { v, done -> AudioState.setSpace(AudioState.space.copy(height = v), done) }
+        bindSlider(sliderRotate) { v, done -> AudioState.setSpace(AudioState.space.copy(rotation = v), done) }
+        findViewById<MaterialButton>(R.id.btnResetRotate).setOnClickListener {
+            AudioState.setSpace(AudioState.space.copy(rotation = 0f))
+        }
+        Space360Processor.HEAD_NAMES.forEachIndexed { i, name ->
+            val chip = newChip(chipsHead, name, checkable = true)
+            chip.setOnClickListener { AudioState.setSpace(AudioState.space.copy(headSize = i)) }
+            headChips.add(chip)
+            chipsHead.addView(chip)
+        }
+        speakerMap.onRotate = { deg, done -> AudioState.setSpace(AudioState.space.copy(rotation = deg), done) }
         switchHpFix.setOnCheckedChangeListener { _, checked ->
             if (suppress) return@setOnCheckedChangeListener
             AudioState.setTheater(AudioState.theater.copy(headphoneFix = checked))
@@ -546,10 +589,11 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     override fun onTestSpeaker(index: Int) {
         speakerMap.setActive(index)
         if (index >= 0) {
-            txtTestNow.text = getString(R.string.test_now, TheaterProcessor.NAMES[index])
+            val names = if (AudioState.mode == AudioState.MODE_360) Space360Processor.NAMES else TheaterProcessor.NAMES
+            txtTestNow.text = getString(R.string.test_now, names.getOrElse(index) { "" })
             btnSpeakerTest.text = getString(R.string.test_stop)
         } else {
-            txtTestNow.text = getString(R.string.test_hint)
+            txtTestNow.text = getString(if (AudioState.mode == AudioState.MODE_360) R.string.map_hint_360 else R.string.test_hint)
             btnSpeakerTest.text = getString(R.string.test_all)
         }
     }

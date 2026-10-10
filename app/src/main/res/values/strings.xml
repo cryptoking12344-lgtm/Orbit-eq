@@ -7,7 +7,7 @@
     <string name="global_off">System-wide EQ is off</string>
 
     <string name="tab_eq">Equalizer</string>
-    <string name="tab_player">8D Player</string>
+    <string name="tab_player">Player</string>
     <string name="tab_profiles">Headphones</string>
 
     <string name="viz_hint">Tap to show a live visualizer (needs microphone permission to read the audio output)</string>
@@ -38,7 +38,7 @@
     <string name="eight_d_sub">Sound circles around your head. Use headphones.</string>
     <string name="lbl_8d_speed">Rotation · one circle every %1$.1f s</string>
     <string name="lbl_8d_depth">Effect strength · %1$d%%</string>
-    <string name="player_hint">The player uses your Equalizer, bass, surround and reverb settings too. Turn System-wide off while using it so the EQ isn\'t applied twice.</string>
+    <string name="player_hint">The player also uses your Equalizer and bass settings. Turn System-wide off while using it so the EQ isn\'t applied twice.</string>
 
     <string name="headphones">Headphones</string>
     <string name="device_now">Connected: %1$s</string>
@@ -86,4 +86,20 @@
     <string name="yt_no_link">That doesn\'t look like a YouTube link</string>
     <string name="yt_clipboard_empty">No YouTube link found on your clipboard</string>
     <string name="yt_playing">Playing from YouTube</string>
+
+    <string name="sound_mode">Sound mode</string>
+    <string name="mode_off">Off</string>
+    <string name="mode_360">360</string>
+    <string name="mode_sub_off">Normal stereo, with the Equalizer tab\'s surround and reverb</string>
+    <string name="mode_sub_theater">Virtual 7.1.4 cinema: music on a stage in front, a big room around you</string>
+    <string name="mode_sub_360">Orbit 360: the song placed all around you, like standing inside the band</string>
+    <string name="lbl_wrap">Wrap · %1$d°</string>
+    <string name="lbl_height">Height · %1$d%%</string>
+    <string name="lbl_rotate">Rotate · %1$s</string>
+    <string name="rot_front">facing the band</string>
+    <string name="rot_right">%1$d° to the right</string>
+    <string name="rot_left">%1$d° to the left</string>
+    <string name="face_front">Face front</string>
+    <string name="head_size">Head size</string>
+    <string name="map_hint_360">Drag around the circle to turn the scene</string>
 </resources>

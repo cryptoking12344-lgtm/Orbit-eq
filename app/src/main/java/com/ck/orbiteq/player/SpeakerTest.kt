@@ -5,14 +5,17 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
+import com.ck.orbiteq.dsp.Space360Processor
 import com.ck.orbiteq.dsp.TheaterProcessor
 import com.ck.orbiteq.model.AudioState
 import java.util.Random
 import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
- * Plays pulsed pink noise from one virtual speaker at a time, like the
- * speaker check on a cinema amplifier, through the current Theater settings.
+ * Speaker check: a soft plucked-string arpeggio from one virtual speaker at a
+ * time. Going around all speakers plays a rising pentatonic melody.
  */
 object SpeakerTest {
 
@@ -22,7 +25,9 @@ object SpeakerTest {
     }
 
     private const val FS = 48000
-    private const val SECONDS_PER_SPEAKER = 1.6
+    private const val SECONDS_PER_SPEAKER = 1.35
+    /** Pentatonic steps (semitones above C4) — one per speaker in test order. */
+    private val SCALE = intArrayOf(0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26)
     private val main = Handler(Looper.getMainLooper())
     @Volatile private var stopFlag = false
     private var worker: Thread? = null
@@ -30,9 +35,15 @@ object SpeakerTest {
 
     val isRunning: Boolean get() = worker?.isAlive == true
 
-    fun playOne(speaker: Int) = start(intArrayOf(speaker))
+    private fun is360() = AudioState.mode == AudioState.MODE_360
 
-    fun playAll() = start(TheaterProcessor.TEST_ORDER)
+    fun playOne(speaker: Int) {
+        val order = if (is360()) Space360Processor.TEST_ORDER else TheaterProcessor.TEST_ORDER
+        val step = order.indexOf(speaker).coerceAtLeast(0)
+        start(intArrayOf(speaker), step)
+    }
+
+    fun playAll() = start(if (is360()) Space360Processor.TEST_ORDER else TheaterProcessor.TEST_ORDER, 0)
 
     fun stop() {
         stopFlag = true
@@ -43,16 +54,17 @@ object SpeakerTest {
         worker = null
     }
 
-    private fun start(order: IntArray) {
+    private fun start(order: IntArray, firstStep: Int) {
         stop()
         if (PlayerEngine.state.playing) PlayerEngine.pause()
         stopFlag = false
-        val t = Thread({ run(order) }, "orbit-speaker-test")
+        val space = is360()
+        val t = Thread({ run(order, firstStep, space) }, "orbit-speaker-test")
         worker = t
         t.start()
     }
 
-    private fun run(order: IntArray) {
+    private fun run(order: IntArray, firstStep: Int, space: Boolean) {
         var track: AudioTrack? = null
         try {
             val minBuf = AudioTrack.getMinBufferSize(FS, AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_FLOAT)
@@ -76,43 +88,47 @@ object SpeakerTest {
             track = tr
             tr.play()
 
-            val proc = TheaterProcessor(FS)
-            proc.configure(AudioState.theater.toParams())
+            val theater = if (space) null else TheaterProcessor(FS).also { it.configure(AudioState.theater.toParams()) }
+            val sphere = if (space) Space360Processor(FS).also { it.configure(AudioState.space.toParams(AudioState.theater)) } else null
+            fun render(input: FloatArray, out: FloatArray, n: Int, spk: Int) {
+                if (sphere != null) sphere.processTest(input, out, n, spk) else theater!!.processTest(input, out, n, spk)
+            }
+
             val block = 512
             val input = FloatArray(block)
             val out = FloatArray(block * 2)
-            val noise = PinkNoise()
+            val synth = PluckSynth(FS)
             val perSpeaker = (SECONDS_PER_SPEAKER * FS).toInt()
-            val burst = (0.18 * FS).toInt()
-            val gap = (0.07 * FS).toInt()
+            val noteGap = (0.24 * FS).toInt()
 
-            for (spk in order) {
+            for ((k, spk) in order.withIndex()) {
                 if (stopFlag) break
                 main.post { listener?.onTestSpeaker(spk) }
+                val root = SCALE[(firstStep + k) % SCALE.size]
+                // root, fifth, octave
+                val notes = intArrayOf(root, root + 7, root + 12)
                 var done = 0
                 while (done < perSpeaker && !stopFlag) {
                     val n = minOf(block, perSpeaker - done)
                     for (i in 0 until n) {
-                        val pos = (done + i) % (burst + gap)
-                        // short fades avoid clicks
-                        val env = when {
-                            pos >= burst -> 0f
-                            pos < 240 -> pos / 240f
-                            pos > burst - 240 -> (burst - pos) / 240f
-                            else -> 1f
+                        val t = done + i
+                        if (t % noteGap == 0) {
+                            val idx = t / noteGap
+                            if (idx < notes.size) synth.pluck(midiToHz(60 + notes[idx]), if (idx == 0) 0.55f else 0.42f)
                         }
-                        input[i] = noise.next() * env * 0.8f
+                        input[i] = synth.next()
                     }
-                    proc.processTest(input, out, n, spk)
+                    render(input, out, n, spk)
                     tr.write(out, 0, n * 2, AudioTrack.WRITE_BLOCKING)
                     done += n
                 }
             }
-            // let the room tail ring out briefly
+            // let the notes and room ring out
             if (!stopFlag) {
-                input.fill(0f)
-                repeat((0.5 * FS / block).toInt()) {
-                    proc.processTest(input, out, block, 0)
+                val last = order.lastOrNull() ?: 0
+                repeat((0.7 * FS / block).toInt()) {
+                    for (i in 0 until block) input[i] = synth.next()
+                    render(input, out, block, last)
                     tr.write(out, 0, block * 2, AudioTrack.WRITE_BLOCKING)
                 }
             }
@@ -127,23 +143,51 @@ object SpeakerTest {
         }
     }
 
-    /** Paul Kellet's pink noise filter. */
-    private class PinkNoise {
-        private val r = Random()
-        private var b0 = 0f; private var b1 = 0f; private var b2 = 0f; private var b3 = 0f
-        private var b4 = 0f; private var b5 = 0f; private var b6 = 0f
+    private fun midiToHz(m: Int) = 440f * 2f.pow((m - 69) / 12f)
+
+    /** Karplus–Strong plucked string, a few overlapping voices. */
+    private class PluckSynth(private val fs: Int) {
+        private class Voice(size: Int) {
+            val buf = FloatArray(size)
+            var len = 1
+            var pos = 0
+            var active = false
+            var decay = 0.996f
+        }
+
+        private val voices = Array(4) { Voice(fs / 40) }
+        private var nextVoice = 0
+        private val rnd = Random(3)
+
+        fun pluck(freq: Float, amp: Float) {
+            val v = voices[nextVoice]
+            nextVoice = (nextVoice + 1) % voices.size
+            v.len = (fs / freq).roundToInt().coerceIn(2, v.buf.size)
+            v.pos = 0
+            v.active = true
+            // longer sustain for low notes, a little shorter for high ones
+            v.decay = (0.9985f - freq / 400000f).coerceIn(0.990f, 0.9985f)
+            // soft, slightly smoothed noise burst = warm pick attack
+            var prev = 0f
+            for (i in 0 until v.len) {
+                val x = (rnd.nextFloat() * 2f - 1f) * amp
+                prev = prev * 0.45f + x * 0.55f
+                v.buf[i] = prev
+            }
+        }
 
         fun next(): Float {
-            val w = (r.nextFloat() * 2f - 1f) * 0.3f
-            b0 = 0.99886f * b0 + w * 0.0555179f
-            b1 = 0.99332f * b1 + w * 0.0750759f
-            b2 = 0.96900f * b2 + w * 0.1538520f
-            b3 = 0.86650f * b3 + w * 0.3104856f
-            b4 = 0.55000f * b4 + w * 0.5329522f
-            b5 = -0.7616f * b5 - w * 0.0168980f
-            val v = b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362f
-            b6 = w * 0.115926f
-            return v * 0.25f
+            var s = 0f
+            for (v in voices) {
+                if (!v.active) continue
+                val i = v.pos
+                val j = if (i + 1 >= v.len) 0 else i + 1
+                val out = v.buf[i]
+                v.buf[i] = (out + v.buf[j]) * 0.5f * v.decay
+                v.pos = j
+                s += out
+            }
+            return s
         }
     }
 }

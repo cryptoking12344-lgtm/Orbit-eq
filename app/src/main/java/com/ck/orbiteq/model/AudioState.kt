@@ -47,6 +47,40 @@ object AudioState {
     @Volatile var theater: Theater = Theater()
         private set
 
+    /** Orbit 360: the song on a sphere around you (player only). Shares sub + XM4 tuning with Theater. */
+    class Space(
+        val enabled: Boolean = false,
+        val wrap: Float = 0.7f,
+        val height: Float = 0.5f,
+        val rotation: Float = 0f,
+        val headSize: Int = 1,
+    ) {
+        fun copy(
+            enabled: Boolean = this.enabled,
+            wrap: Float = this.wrap,
+            height: Float = this.height,
+            rotation: Float = this.rotation,
+            headSize: Int = this.headSize,
+        ) = Space(enabled, wrap, height, rotation, headSize)
+
+        fun toParams(t: Theater) =
+            com.ck.orbiteq.dsp.SpaceParams(wrap, height, rotation, headSize, t.sub, t.headphoneFix)
+    }
+
+    @Volatile var space: Space = Space()
+        private set
+
+    const val MODE_OFF = 0
+    const val MODE_THEATER = 1
+    const val MODE_360 = 2
+
+    val mode: Int
+        get() = when {
+            theater.enabled -> MODE_THEATER
+            space.enabled -> MODE_360
+            else -> MODE_OFF
+        }
+
     /** Bumped on every change so the audio thread knows to reconfigure. */
     @Volatile var version: Int = 0
         private set
@@ -76,6 +110,13 @@ object AudioState {
             p.getFloat("th_sub", 0.4f).coerceIn(0f, 1f),
             p.getBoolean("th_fix", true),
         )
+        space = Space(
+            p.getBoolean("sp_on", false) && !theater.enabled,
+            p.getFloat("sp_wrap", 0.7f).coerceIn(0f, 1f),
+            p.getFloat("sp_height", 0.5f).coerceIn(0f, 1f),
+            p.getFloat("sp_rot", 0f).coerceIn(-180f, 180f),
+            p.getInt("sp_head", 1).coerceIn(0, 2),
+        )
         version++
     }
 
@@ -101,6 +142,32 @@ object AudioState {
             ?.putBoolean("8d_on", e.enabled)
             ?.putFloat("8d_speed", e.speedHz)
             ?.putFloat("8d_depth", e.depth)
+            ?.apply()
+        notifyListeners()
+    }
+
+    fun setSpace(sp: Space, persist: Boolean = true) {
+        space = sp
+        version++
+        if (persist) {
+            prefs?.edit()
+                ?.putBoolean("sp_on", sp.enabled)
+                ?.putFloat("sp_wrap", sp.wrap)
+                ?.putFloat("sp_height", sp.height)
+                ?.putFloat("sp_rot", sp.rotation)
+                ?.putInt("sp_head", sp.headSize)
+                ?.apply()
+        }
+        notifyListeners()
+    }
+
+    fun setMode(m: Int) {
+        theater = theater.copy(enabled = m == MODE_THEATER)
+        space = space.copy(enabled = m == MODE_360)
+        version++
+        prefs?.edit()
+            ?.putBoolean("th_on", theater.enabled)
+            ?.putBoolean("sp_on", space.enabled)
             ?.apply()
         notifyListeners()
     }

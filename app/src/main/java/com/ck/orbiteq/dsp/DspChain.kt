@@ -42,19 +42,24 @@ class DspChain(sampleRate: Int) {
     private var pre = 1f
     private var loud = 1f
 
-    private val eightD = EightDProcessor(sampleRate)
     private val spatial = Spatializer(sampleRate)
     private val reverb = Reverb(sampleRate)
     private val limiter = Limiter(sampleRate)
     private val theater = TheaterProcessor(sampleRate)
     private var theaterOn = false
+    private val space = Space360Processor(sampleRate)
+    private var spaceOn = false
 
     private fun dbToLin(db: Float) = 10.0.pow(db / 20.0).toFloat()
 
-    fun configure(s: EqSettings, e: AudioState.EightD, t: AudioState.Theater) {
+    fun configure(s: EqSettings, t: AudioState.Theater, sp: AudioState.Space) {
         if (t.enabled && !theaterOn) theater.reset()
         theaterOn = t.enabled
         theater.configure(t.toParams())
+        val spOn = sp.enabled && !t.enabled
+        if (spOn && !spaceOn) space.reset()
+        spaceOn = spOn
+        space.configure(sp.toParams(t))
 
         var maxBoost = 0f
         for (i in 0 until EqSettings.BANDS) {
@@ -78,9 +83,6 @@ class DspChain(sampleRate: Int) {
         spatial.amount = s.spatial
         reverb.setPreset(s.reverb)
 
-        eightD.enabled = e.enabled
-        eightD.speedHz = e.speedHz
-        eightD.depth = e.depth
     }
 
     fun reset() {
@@ -88,10 +90,10 @@ class DspChain(sampleRate: Int) {
         eqR.forEach { it.reset() }
         bassL.reset()
         bassR.reset()
-        eightD.reset()
         spatial.reset()
         reverb.reset()
         theater.reset()
+        space.reset()
         limiter.reset()
     }
 
@@ -115,13 +117,14 @@ class DspChain(sampleRate: Int) {
                 buf[2 * n + 1] = r
             }
         }
-        if (theaterOn) {
-            // Theater replaces 8D, surround and reverb with the full 7.1.4 room.
-            theater.process(buf, frames)
-        } else {
-            eightD.process(buf, frames)
-            spatial.process(buf, frames)
-            reverb.process(buf, frames)
+        when {
+            // Theater / 360 replace the simple surround and reverb.
+            theaterOn -> theater.process(buf, frames)
+            spaceOn -> space.process(buf, frames)
+            else -> {
+                spatial.process(buf, frames)
+                reverb.process(buf, frames)
+            }
         }
         if (loud != 1f) {
             for (i in 0 until frames * 2) buf[i] *= loud
