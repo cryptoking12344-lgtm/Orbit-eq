@@ -64,3 +64,25 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Orbit EQ build ${{ github.run_number }}
           files: OrbitEQ.apk
+
+      - name: YouTube smoke test (real network)
+        id: ytsmoke
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest --no-daemon 2>&1 | tee yt.log
+
+      - name: Report YouTube smoke test on the commit
+        if: always() && steps.ytsmoke.outcome != 'skipped'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "YouTube smoke test: ${{ steps.ytsmoke.outcome }}"
+            echo '```'
+            grep -E "YT_SMOKE|PASSED|FAILED|SKIPPED|Exception|Caused by|at com\.ck|^e: " yt.log | grep -v "progress" | head -60 || true
+            echo '```'
+          } > yt.md
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@yt.md

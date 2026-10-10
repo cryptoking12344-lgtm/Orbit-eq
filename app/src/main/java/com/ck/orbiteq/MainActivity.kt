@@ -1,6 +1,7 @@
 package com.ck.orbiteq
 
 import android.Manifest
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.audiofx.AudioEffect
@@ -12,6 +13,8 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
 import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -32,6 +35,10 @@ import com.ck.orbiteq.player.PlayerEngine
 import com.ck.orbiteq.player.SpeakerTest
 import com.ck.orbiteq.ui.EqCurveView
 import com.ck.orbiteq.ui.SpeakerMapView
+import com.ck.orbiteq.youtube.YouTubeLoader
+import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.textfield.TextInputEditText
+import java.io.File
 import com.ck.orbiteq.ui.VisualizerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
@@ -43,7 +50,7 @@ import com.google.android.material.slider.Slider
 import java.util.Locale
 import kotlin.math.roundToInt
 
-class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Listener {
+class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Listener, YouTubeLoader.Listener {
 
     // header
     private lateinit var switchGlobal: MaterialSwitch
@@ -79,6 +86,13 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private lateinit var slider8dDepth: Slider
     private lateinit var lbl8dSpeed: TextView
     private lateinit var lbl8dDepth: TextView
+
+    // youtube
+    private lateinit var editYt: TextInputEditText
+    private lateinit var btnYtPlay: MaterialButton
+    private lateinit var progressYt: LinearProgressIndicator
+    private lateinit var txtYtStatus: TextView
+    private lateinit var bottomNav: BottomNavigationView
 
     // theater
     private lateinit var switchTheater: MaterialSwitch
@@ -148,12 +162,20 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         setupPlayer()
         setupTheater()
         setupProfiles()
+        setupYouTube()
         handleEffectIntent(intent)
+        handleShareIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleEffectIntent(intent)
+        handleShareIntent(intent)
+    }
+
+    override fun onDestroy() {
+        if (YouTubeLoader.listener === this) YouTubeLoader.listener = null
+        super.onDestroy()
     }
 
     override fun onResume() {
@@ -216,6 +238,12 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         lbl8dSpeed = findViewById(R.id.lbl8dSpeed)
         lbl8dDepth = findViewById(R.id.lbl8dDepth)
 
+        editYt = findViewById(R.id.editYt)
+        btnYtPlay = findViewById(R.id.btnYtPlay)
+        progressYt = findViewById(R.id.progressYt)
+        txtYtStatus = findViewById(R.id.txtYtStatus)
+        bottomNav = findViewById(R.id.bottomNav)
+
         switchTheater = findViewById(R.id.switchTheater)
         speakerMap = findViewById(R.id.speakerMap)
         txtTestNow = findViewById(R.id.txtTestNow)
@@ -241,7 +269,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     // ------------------------------------------------------------------ navigation
 
     private fun setupNav() {
-        val nav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        val nav = bottomNav
         nav.setOnItemSelectedListener { item ->
             showPage(
                 when (item.itemId) {
@@ -526,7 +554,100 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         }
     }
 
+    // ------------------------------------------------------------------ youtube
+
+    private fun setupYouTube() {
+        YouTubeLoader.listener = this
+        btnYtPlay.setOnClickListener { playYouTube(editYt.text?.toString()) }
+        editYt.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO) {
+                playYouTube(editYt.text?.toString())
+                true
+            } else {
+                false
+            }
+        }
+        findViewById<MaterialButton>(R.id.btnYtPaste).setOnClickListener {
+            val clip = getSystemService(ClipboardManager::class.java)?.primaryClip
+            val text = if (clip != null && clip.itemCount > 0) clip.getItemAt(0).coerceToText(this)?.toString() else null
+            val link = YouTubeLoader.findUrl(text)
+            if (link == null) {
+                toast(getString(R.string.yt_clipboard_empty))
+            } else {
+                editYt.setText(link)
+                playYouTube(link)
+            }
+        }
+    }
+
+    private fun handleShareIntent(i: Intent?) {
+        if (i?.action != Intent.ACTION_SEND) return
+        val link = YouTubeLoader.findUrl(i.getStringExtra(Intent.EXTRA_TEXT))
+        if (link == null) {
+            toast(getString(R.string.yt_no_link))
+            return
+        }
+        // handle each share once (not again after rotation)
+        i.action = null
+        bottomNav.selectedItemId = R.id.nav_player
+        editYt.setText(link)
+        playYouTube(link)
+    }
+
+    private fun playYouTube(text: String?) {
+        val link = YouTubeLoader.findUrl(text)
+        if (link == null) {
+            toast(getString(R.string.yt_no_link))
+            return
+        }
+        getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(editYt.windowToken, 0)
+        editYt.clearFocus()
+        SpeakerTest.stop()
+        YouTubeLoader.load(this, link)
+    }
+
+    override fun onYtProgress(message: String, progress: Int) {
+        txtYtStatus.text = message
+        progressYt.visibility = View.VISIBLE
+        if (progress < 0) {
+            if (!progressYt.isIndeterminate) {
+                progressYt.visibility = View.INVISIBLE
+                progressYt.isIndeterminate = true
+                progressYt.visibility = View.VISIBLE
+            }
+        } else {
+            if (progressYt.isIndeterminate) {
+                progressYt.visibility = View.INVISIBLE
+                progressYt.isIndeterminate = false
+                progressYt.visibility = View.VISIBLE
+            }
+            progressYt.setProgressCompat(progress, true)
+        }
+        btnYtPlay.isEnabled = false
+    }
+
+    override fun onYtReady(file: File, title: String) {
+        progressYt.visibility = View.GONE
+        btnYtPlay.isEnabled = true
+        txtYtStatus.text = getString(R.string.yt_playing)
+        PlayerEngine.load(this, Uri.fromFile(file), title)
+        PlayerEngine.play()
+    }
+
+    override fun onYtError(message: String) {
+        progressYt.visibility = View.GONE
+        btnYtPlay.isEnabled = true
+        txtYtStatus.text = message
+        toast(message)
+    }
+
     private fun loadSong(uri: Uri) {
+        if (YouTubeLoader.busy) {
+            YouTubeLoader.cancel()
+            progressYt.visibility = View.GONE
+            btnYtPlay.isEnabled = true
+            txtYtStatus.text = getString(R.string.yt_sub)
+        }
         try {
             contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         } catch (_: Exception) {

@@ -77,4 +77,13 @@
     <string name="xm4_fix">Sony WH-1000XM4 tuning</string>
     <string name="xm4_fix_sub">Evens out the XM4\'s sound for a natural cinema</string>
     <string name="eight_d_off_theater">Off while Theater is on</string>
+
+    <string name="share_label">Play in Orbit EQ</string>
+    <string name="yt_title">Play from YouTube</string>
+    <string name="yt_hint">Paste a YouTube link</string>
+    <string name="yt_paste">Paste</string>
+    <string name="yt_sub">Or tap Share → Orbit EQ in the YouTube app. Songs you\'ve played are saved for faster replays.</string>
+    <string name="yt_no_link">That doesn\'t look like a YouTube link</string>
+    <string name="yt_clipboard_empty">No YouTube link found on your clipboard</string>
+    <string name="yt_playing">Playing from YouTube</string>
 </resources>
