@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.exceptions.ContentNotAvailableException
 import org.schabi.newpipe.extractor.exceptions.ExtractionException
 import org.schabi.newpipe.extractor.exceptions.GeographicRestrictionException
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
+import org.schabi.newpipe.extractor.exceptions.SignInConfirmNotBotException
 import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.AudioTrackType
@@ -80,6 +81,8 @@ object YtCore {
             throw YtException("This video isn't available in your country", e)
         } catch (e: ContentNotAvailableException) {
             throw YtException("This video isn't available" + (e.message?.let { ": $it" } ?: ""), e)
+        } catch (e: SignInConfirmNotBotException) {
+            throw YtException("YouTube is asking to confirm you're not a bot. Try again later, or switch between Wi‑Fi and mobile data.", e)
         } catch (e: ReCaptchaException) {
             throw YtException("YouTube asked for a captcha. Try again in a little while.", e)
         } catch (e: ExtractionException) {
