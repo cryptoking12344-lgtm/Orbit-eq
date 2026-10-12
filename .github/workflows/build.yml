@@ -86,3 +86,63 @@ jobs:
             echo '```'
           } > yt.md
           gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@yt.md
+
+  # Launches the APK on an Android emulator, taps through the main screens,
+  # saves screenshots and reports any crash. Never blocks the APK release.
+  uitest:
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: OrbitEQ-apk
+
+      - name: Make test songs
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
+          bash .github/scripts/make-test-music.sh
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run app on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash .github/scripts/ui-test.sh
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test
+          path: |
+            shots/
+            logcat.txt
+            crashes.txt
+            media_session.txt
+
+      - name: Report crashes on the commit
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "UI test: $(ls shots 2>/dev/null | wc -l) screenshots"
+            echo '```'
+            head -80 crashes.txt 2>/dev/null || echo "no crash file"
+            echo '```'
+          } > ui.md
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@ui.md
