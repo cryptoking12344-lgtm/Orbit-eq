@@ -25,6 +25,8 @@ import com.ck.orbiteq.R
 import com.ck.orbiteq.library.ArtLoader
 import com.ck.orbiteq.library.Group
 import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.sqrt
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -41,7 +43,7 @@ class AlbumFlowView @JvmOverloads constructor(
     var onSelected: ((Int) -> Unit)? = null
     var onCenterTap: ((Int) -> Unit)? = null
 
-    var effect = FlowMath.FLOW
+    var effect = FlowMath.N8
         set(v) { field = v; invalidate() }
 
     private var albums: List<Group> = emptyList()
@@ -68,7 +70,20 @@ class AlbumFlowView @JvmOverloads constructor(
     private val path = Path()
     private val centerRect = RectF()
 
-    private var animator: ValueAnimator? = null
+    // ---- motion physics (albums, albums/second)
+    private enum class Mode { IDLE, DRAG, FLING, SPRING }
+    private var mode = Mode.IDLE
+    private var vel = 0f                // scroll speed, albums per second
+    private var lean = 0f               // smoothed speed used for the covers' lean
+    private var target = 0f             // spring target
+    private var stiffness = 110f
+    private var lastFrameNs = 0L
+    private var lastDragPos = 0f
+    private var lastDragNs = 0L
+    private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND }
+    private val frame = object : Runnable {
+        override fun run() { step() }
+    }
     private var flipAnim: ValueAnimator? = null
     private var velocity: VelocityTracker? = null
     private var downX = 0f
@@ -90,11 +105,11 @@ class AlbumFlowView @JvmOverloads constructor(
 
     fun scrollTo(index: Int, animate: Boolean = true) {
         if (albums.isEmpty()) return
-        val target = index.coerceIn(0, albums.size - 1).toFloat()
+        val t = index.coerceIn(0, albums.size - 1).toFloat()
         if (!animate) {
-            animator?.cancel(); position = target; notifySelection(); invalidate(); return
+            mode = Mode.IDLE; vel = 0f; lean = 0f; position = t; notifySelection(); invalidate(); return
         }
-        animateTo(target, 420L)
+        springTo(t, 70f)
     }
 
     /** Flip the centre album over (true) or back (false). */
@@ -126,28 +141,88 @@ class AlbumFlowView @JvmOverloads constructor(
     private fun wide() = width > height * 1.2f
     private fun cardPx(): Float = if (wide()) height * 0.6f else min(width * 0.52f, height * 0.6f)
     private fun cardCenterY(): Float = if (wide()) height * 0.42f else height * 0.44f
-    private fun spacingPx(): Float = cardPx() * (if (effect == FlowMath.FLOW) (if (wide()) 0.45f else 0.38f) else 0.55f)
+    /** How far the finger travels to move one album. */
+    private fun spacingPx(): Float = cardPx() * when (effect) {
+        FlowMath.N8 -> if (wide()) 0.46f else 0.40f
+        FlowMath.FLOW -> if (wide()) 0.45f else 0.38f
+        else -> 0.55f
+    }
 
     private fun notifySelection() {
         val s = selected
         if (s != lastSelected && albums.isNotEmpty()) {
+            if (lastSelected >= 0 && mode != Mode.IDLE && abs(vel) < 12f) {
+                // a soft click per album, like a wheel detent (skipped while racing)
+                performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+            }
             lastSelected = s
             onSelected?.invoke(s)
         }
     }
 
-    private fun animateTo(target: Float, ms: Long) {
-        animator?.cancel()
-        val from = position
-        animator = ValueAnimator.ofFloat(from, target).apply {
-            duration = ms
-            interpolator = DecelerateInterpolator(2f)
-            addUpdateListener {
-                position = it.animatedValue as Float
-                notifySelection()
-                invalidate()
+    // ------------------------------------------------------------------ physics
+
+    /** Friction for flings: a hard flick races through many albums, a gentle one moves a few. */
+    private val friction = 2.4f
+
+    private fun startLoop() {
+        if (lastFrameNs == 0L) {
+            lastFrameNs = System.nanoTime()
+            postOnAnimation(frame)
+        }
+    }
+
+    private fun springTo(t: Float, k: Float = 110f) {
+        target = t
+        stiffness = k
+        mode = Mode.SPRING
+        startLoop()
+    }
+
+    private fun maxPos() = max(0, albums.size - 1).toFloat()
+
+    private fun step() {
+        val now = System.nanoTime()
+        val dt = ((now - lastFrameNs) / 1e9f).coerceIn(0.001f, 0.05f)
+        lastFrameNs = now
+        when (mode) {
+            Mode.FLING -> {
+                position += vel * dt
+                vel *= exp(-friction * dt)
+                val outOfRange = position < 0f || position > maxPos()
+                if (outOfRange) {
+                    // ran past the first/last album: bounce back
+                    springTo(position.coerceIn(0f, maxPos()), 160f)
+                } else if (abs(vel) < 2.2f) {
+                    // where it would naturally stop -> settle exactly on an album
+                    val stop = (position + vel / friction).roundToInt().toFloat().coerceIn(0f, maxPos())
+                    springTo(stop)
+                }
             }
-            start()
+            Mode.SPRING -> {
+                val c = 2f * sqrt(stiffness)
+                val acc = -stiffness * (position - target) - c * vel
+                vel += acc * dt
+                position += vel * dt
+                if (abs(position - target) < 0.0008f && abs(vel) < 0.02f) {
+                    position = target; vel = 0f; mode = Mode.IDLE
+                }
+            }
+            Mode.DRAG -> {
+                // finger is still: let the measured speed fade out
+                if (now - lastDragNs > 40_000_000L) vel *= exp(-12f * dt)
+            }
+            Mode.IDLE -> vel = 0f
+        }
+        // the lean follows the speed smoothly (covers settle flat when they stop)
+        lean += (vel - lean) * min(1f, dt * 9f)
+        notifySelection()
+        invalidate()
+        if (mode == Mode.IDLE && abs(lean) < 0.05f) {
+            lean = 0f
+            lastFrameNs = 0L
+        } else {
+            postOnAnimation(frame)
         }
     }
 
@@ -168,7 +243,7 @@ class AlbumFlowView @JvmOverloads constructor(
 
         for (i in order) {
             val d = i - position
-            FlowMath.place(d, effect, wide, open, place)
+            FlowMath.place(d, effect, wide, open, place, lean)
             if (place.alpha <= 0.01f) continue
             val g = albums[i]
             val bmp = art(g)
@@ -202,6 +277,24 @@ class AlbumFlowView @JvmOverloads constructor(
                 )
             }
         }
+        drawPositionBar(canvas)
+    }
+
+    /** Thin track at the bottom showing where you are in the whole collection. */
+    private fun drawPositionBar(canvas: Canvas) {
+        if (albums.size < 2 || open > 0.5f) return
+        val pad = context.dp(28f)
+        val y = height - context.dp(10f)
+        val w = width - 2 * pad
+        val frac = (position / maxPos()).coerceIn(0f, 1f)
+        val thumb = max(context.dp(24f), w / albums.size.toFloat())
+        val active = min(1f, 0.35f + abs(lean) / 6f)
+        barPaint.strokeWidth = context.dp(3f)
+        barPaint.color = ColorUtils.setAlphaComponent(textColor, 28)
+        canvas.drawLine(pad, y, pad + w, y, barPaint)
+        barPaint.color = ColorUtils.setAlphaComponent(accent, (255 * active).toInt())
+        val x0 = pad + (w - thumb) * frac
+        canvas.drawLine(x0, y, x0 + thumb, y, barPaint)
     }
 
     private fun quadPath() {
@@ -284,20 +377,41 @@ class AlbumFlowView @JvmOverloads constructor(
         if (albums.isEmpty()) return false
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                animator?.cancel()
+                // catch the moving wall under the finger
+                val wasMoving = mode == Mode.FLING || (mode == Mode.SPRING && abs(vel) > 1.5f)
+                mode = Mode.DRAG
                 velocity?.recycle()
                 velocity = VelocityTracker.obtain().also { it.addMovement(e) }
-                downX = e.x; downY = e.y; downPos = position; dragging = false
+                downX = e.x; downY = e.y; downPos = position
+                dragging = wasMoving          // a catch is never a tap
+                caught = wasMoving
+                vel = 0f
+                lastDragPos = position; lastDragNs = System.nanoTime()
                 parent?.requestDisallowInterceptTouchEvent(true)
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
                 velocity?.addMovement(e)
                 val dx = e.x - downX
-                if (!dragging && abs(dx) > touchSlop && !isOpen) dragging = true
-                if (dragging) {
-                    position = (downPos - dx / spacingPx()).coerceIn(-0.4f, albums.size - 0.6f)
+                if (!dragging && abs(dx) > touchSlop && !isOpen) {
+                    dragging = true
+                    downX = e.x; downPos = position
+                }
+                if (dragging && !isOpen) {
+                    var p = downPos - (e.x - downX) / spacingPx()
+                    // rubber band past the first / last album
+                    val mx = maxPos()
+                    if (p < 0f) p = -rubber(-p) else if (p > mx) p = mx + rubber(p - mx)
+                    val now = System.nanoTime()
+                    val dt = (now - lastDragNs) / 1e9f
+                    if (dt > 0.004f) {
+                        val v = (p - lastDragPos) / dt
+                        vel += (v - vel) * 0.5f
+                        lastDragPos = p; lastDragNs = now
+                    }
+                    position = p
                     notifySelection()
+                    startLoop()
                     invalidate()
                 }
                 return true
@@ -306,29 +420,56 @@ class AlbumFlowView @JvmOverloads constructor(
                 parent?.requestDisallowInterceptTouchEvent(false)
                 val vt = velocity
                 vt?.addMovement(e)
-                vt?.computeCurrentVelocity(1000)
+                vt?.computeCurrentVelocity(1000, maxFling)
                 val vx = vt?.xVelocity ?: 0f
                 velocity?.recycle(); velocity = null
-                if (dragging) {
+                if (dragging && !isOpen) {
                     dragging = false
-                    // momentum: fling a few albums, then settle on one
-                    val travel = -vx / spacingPx() * 0.32f
-                    val target = (position + travel).roundToInt().coerceIn(0, albums.size - 1).toFloat()
-                    val dist = abs(target - position)
-                    animateTo(target, (260 + dist * 90).toLong().coerceAtMost(1400))
+                    release(-vx / spacingPx())
+                } else if (caught) {
+                    springTo(position.roundToInt().toFloat().coerceIn(0f, maxPos()))
                 } else {
+                    mode = Mode.IDLE
                     tap(e.x, e.y)
                 }
+                caught = false
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 velocity?.recycle(); velocity = null
-                if (dragging) { dragging = false; animateTo(position.roundToInt().toFloat().coerceIn(0f, albums.size - 1f), 260) }
+                dragging = false; caught = false
+                springTo(position.roundToInt().toFloat().coerceIn(0f, maxPos()))
                 return true
             }
         }
         return super.onTouchEvent(e)
+    }
+
+    private var caught = false
+    private val maxFling = ViewConfiguration.get(context).scaledMaximumFlingVelocity.toFloat()
+
+    /** Past the ends the wall resists more the further you pull (max ~0.6 album). */
+    private fun rubber(over: Float) = 0.6f * (1f - 1f / (over * 1.6f + 1f))
+
+    /**
+     * Finger lifted at [v] albums/second.
+     * Slow: settle on the nearest album. Medium: glide a few. Hard: race through many,
+     * then ease down and land exactly on one.
+     */
+    private fun release(v: Float) {
+        val mx = maxPos()
+        if (position < 0f || position > mx) { vel = v * 0.3f; springTo(position.coerceIn(0f, mx), 160f); return }
+        if (abs(v) < 1.2f) {
+            vel = v
+            springTo((position + v * 0.12f).roundToInt().toFloat().coerceIn(0f, mx))
+            return
+        }
+        // a hard flick gets a little extra so it really flies
+        val boost = 1f + 0.35f * ((abs(v) - 8f) / 30f).coerceIn(0f, 1f)
+        vel = (v * boost).coerceIn(-90f, 90f)
+        mode = Mode.FLING
+        startLoop()
     }
 
     private fun tap(x: Float, y: Float) {
@@ -338,11 +479,14 @@ class AlbumFlowView @JvmOverloads constructor(
             onCenterTap?.invoke(selected)
             return
         }
-        // tapped a side album: bring it to the middle
+        // tapped a side album: bring that one to the middle
         val dir = if (x < width / 2f) -1 else 1
-        val dist = abs(x - width / 2f) / max(1f, cardPx() * (if (effect == FlowMath.FLOW) 0.4f else 0.8f))
-        val steps = max(1, min(4, dist.toInt()))
-        scrollTo(selected + dir * steps)
+        val card = cardPx()
+        val off = abs(x - width / 2f) / card    // in card units
+        val first = when (effect) { FlowMath.N8 -> if (wide()) 0.84f else 0.80f; FlowMath.FLOW -> if (wide()) 0.86f else 0.62f; else -> 1f }
+        val step = when (effect) { FlowMath.N8 -> if (wide()) 0.40f else 0.30f; FlowMath.FLOW -> if (wide()) 0.32f else 0.12f; else -> 1f }
+        val steps = if (off <= first + 0.25f) 1 else 1 + ((off - first - 0.25f) / step).toInt() + 1
+        scrollTo(selected + dir * steps.coerceIn(1, 6))
     }
 
     override fun performClick(): Boolean {

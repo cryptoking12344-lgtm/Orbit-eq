@@ -47,10 +47,11 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
             chip.text = name
             chip.isCheckable = true
             chip.id = View.generateViewId()
-            chip.isChecked = i == flow.effect
+            val id = Appearance.FLOW_IDS[i]
+            chip.isChecked = id == flow.effect
             chip.setOnClickListener {
-                flow.effect = i
-                Appearance.setFlowEffect(ctx, i)
+                flow.effect = id
+                Appearance.setFlowEffect(ctx, id)
             }
             effects.addView(chip)
         }
@@ -87,10 +88,23 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
         openAlbum?.let { adapter.set(it.tracks, uri) }
     }
 
+    private var titleShown = false
+
+    /** Album name under the wall; a quick crossfade when it changes. */
     private fun showTitle(i: Int) {
         val g = albums.getOrNull(i) ?: return
-        title.text = g.name
-        sub.text = "${g.sub} · ${MusicLibrary.songsLabel(g.tracks.size)}"
+        val apply = {
+            title.text = g.name
+            sub.text = "${g.sub} · ${MusicLibrary.songsLabel(g.tracks.size)}"
+        }
+        if (!titleShown) { titleShown = true; apply(); return }
+        title.animate().cancel(); sub.animate().cancel()
+        title.animate().alpha(0f).setDuration(70).withEndAction {
+            apply()
+            title.animate().alpha(1f).setDuration(140).start()
+            sub.animate().alpha(1f).setDuration(140).start()
+        }.start()
+        sub.animate().alpha(0f).setDuration(70).start()
     }
 
     private fun openAlbum(i: Int) {

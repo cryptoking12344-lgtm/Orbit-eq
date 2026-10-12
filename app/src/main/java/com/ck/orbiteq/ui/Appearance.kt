@@ -26,21 +26,23 @@ object Appearance {
     val ACCENT_COLORS = intArrayOf(0xFFA78BFA.toInt(), 0xFF22D3EE.toInt(), 0xFF5EEAD4.toInt(), 0xFFFBBF24.toInt(), 0xFFFB7185.toInt())
     private val ACCENT_STYLES = intArrayOf(R.style.Accent_Violet, R.style.Accent_Cyan, R.style.Accent_Mint, R.style.Accent_Amber, R.style.Accent_Rose)
     val VIZ_NAMES = arrayOf("Bars", "Peaks", "Wave")
-    val FLOW_NAMES = arrayOf("Cover Flow", "Wheel", "Stack", "Glide")
+    val FLOW_NAMES = arrayOf("N8 Flow", "Cover Flow", "Wheel", "Stack", "Glide")
+    /** FlowMath effect id for each entry of FLOW_NAMES. */
+    val FLOW_IDS = intArrayOf(FlowMath.N8, FlowMath.FLOW, FlowMath.WHEEL, FlowMath.STACK, FlowMath.GLIDE)
 
     private fun prefs(ctx: Context) = (ctx.applicationContext ?: ctx).getSharedPreferences("orbit_look", Context.MODE_PRIVATE)
 
     fun theme(ctx: Context) = prefs(ctx).getInt("theme", THEME_ORBIT).coerceIn(0, 2)
     fun accent(ctx: Context) = prefs(ctx).getInt("accent", -1).let { if (it in 0..4) it else defaultAccent(theme(ctx)) }
     fun vizStyle(ctx: Context) = prefs(ctx).getInt("viz", -1).let { if (it in 0..2) it else if (theme(ctx) == THEME_RETRO) VIZ_PEAKS else VIZ_BARS }
-    fun flowEffect(ctx: Context) = prefs(ctx).getInt("flow", 0).coerceIn(0, 3)
+    fun flowEffect(ctx: Context) = prefs(ctx).getInt("flow2", FlowMath.N8).let { if (it in FLOW_IDS) it else FlowMath.N8 }
 
     private fun defaultAccent(theme: Int) = if (theme == THEME_MIDNIGHT) 2 else 0
 
     fun setTheme(ctx: Context, t: Int) = prefs(ctx).edit().putInt("theme", t).remove("accent").remove("viz").apply()
     fun setAccent(ctx: Context, a: Int) = prefs(ctx).edit().putInt("accent", a).apply()
     fun setVizStyle(ctx: Context, v: Int) = prefs(ctx).edit().putInt("viz", v).apply()
-    fun setFlowEffect(ctx: Context, f: Int) = prefs(ctx).edit().putInt("flow", f).apply()
+    fun setFlowEffect(ctx: Context, f: Int) = prefs(ctx).edit().putInt("flow2", f).apply()
 
     /** The Retro pixel font draws small, so Retro gets 30 % larger text. Call from attachBaseContext. */
     fun fontScaleOverride(base: Context): android.content.res.Configuration? {

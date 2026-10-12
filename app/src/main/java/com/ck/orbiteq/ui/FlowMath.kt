@@ -16,6 +16,7 @@ object FlowMath {
     const val WHEEL = 1
     const val STACK = 2
     const val GLIDE = 3
+    const val N8 = 4
 
     class Place {
         var x = 0f
@@ -28,12 +29,25 @@ object FlowMath {
     }
 
     /** d = album index minus scroll position; open = 0..1 (center album flipped open). */
-    fun place(d: Float, effect: Int, wide: Boolean, open: Float, out: Place): Place {
+    /** motion = scroll speed in albums per second (signed); N8 leans the covers with it. */
+    fun place(d: Float, effect: Int, wide: Boolean, open: Float, out: Place, motion: Float = 0f): Place {
         val a = abs(d)
         val sg = sign(d)
         val t = min(a, 1f)
         out.scale = 1f; out.y = 0f; out.reflect = true
         when (effect) {
+            N8 -> {
+                // flat wall at rest; covers lean into the direction of travel while moving
+                val first = if (wide) 0.84f else 0.80f
+                val step = if (wide) 0.40f else 0.30f
+                val squeeze = 1f - 0.14f * min(abs(motion) / 20f, 1f)
+                out.x = sg * (t * first + max(0f, a - 1f) * step) * squeeze
+                out.z = 0.10f * t + max(0f, a - 1f) * 0.03f
+                out.scale = 1f - 0.26f * t
+                out.rotY = (motion * 3.2f).coerceIn(-38f, 38f)
+                val lim = if (wide) 6.5f else 5f
+                out.alpha = if (a > lim) 0f else (1f - max(0f, a - (lim - 1.5f)) / 1.5f).coerceIn(0f, 1f)
+            }
             WHEEL -> {
                 val step = 36f
                 val phi = Math.toRadians((d * step).toDouble())
