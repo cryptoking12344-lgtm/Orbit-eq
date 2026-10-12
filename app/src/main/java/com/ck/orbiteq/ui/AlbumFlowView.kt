@@ -30,6 +30,7 @@ import kotlin.math.sqrt
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sign
 
 /**
  * 3D album carousel (Cover Flow / Wheel / Stack / Glide) with momentum scrolling,
@@ -71,7 +72,7 @@ class AlbumFlowView @JvmOverloads constructor(
     private val centerRect = RectF()
 
     // ---- motion physics (albums, albums/second)
-    private enum class Mode { IDLE, DRAG, FLING, SPRING }
+    private enum class Mode { IDLE, DRAG, FLING, SPRING, SCRUB }
     private var mode = Mode.IDLE
     private var vel = 0f                // scroll speed, albums per second
     private var lean = 0f               // smoothed speed used for the covers' lean
@@ -212,13 +213,24 @@ class AlbumFlowView @JvmOverloads constructor(
                 // finger is still: let the measured speed fade out
                 if (now - lastDragNs > 40_000_000L) vel *= exp(-12f * dt)
             }
+            Mode.SCRUB -> {
+                // the wall chases the finger on the bar; its speed drives the lean like a swipe
+                val prev = position
+                position += (scrubTarget - position) * min(1f, dt * 16f)
+                val v = (position - prev) / dt
+                vel += (v - vel) * min(1f, dt * 20f)
+            }
             Mode.IDLE -> vel = 0f
         }
+        // the bar swells into a liquid capsule while held, and relaxes after
+        scrubT += ((if (mode == Mode.SCRUB) 1f else 0f) - scrubT) * min(1f, dt * 12f)
+        if (mode != Mode.SCRUB && scrubT < 0.01f) scrubT = 0f
+        wobble += (vel - wobble) * min(1f, dt * 7f)
         // the lean follows the speed smoothly (covers settle flat when they stop)
         lean += (vel - lean) * min(1f, dt * 9f)
         notifySelection()
         invalidate()
-        if (mode == Mode.IDLE && abs(lean) < 0.05f) {
+        if (mode == Mode.IDLE && abs(lean) < 0.05f && scrubT == 0f) {
             lean = 0f
             lastFrameNs = 0L
         } else {
@@ -280,21 +292,99 @@ class AlbumFlowView @JvmOverloads constructor(
         drawPositionBar(canvas)
     }
 
-    /** Thin track at the bottom showing where you are in the whole collection. */
+    // ------------------------------------------------------------------ liquid scrub bar
+
+    private var scrubT = 0f            // 0 resting slim bar .. 1 held liquid capsule
+    private var scrubTarget = 0f
+    private var wobble = 0f            // lagging speed: makes the capsule stretch and settle like liquid
+    private val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val glassStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val letterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val pill = RectF()
+
+    private fun barPad() = context.dp(28f)
+    private fun barY() = height - context.dp(14f)
+    private fun barThumbW(): Float = max(context.dp(24f), (width - 2 * barPad()) / albums.size.toFloat()).coerceAtMost(context.dp(80f))
+    /** Finger x on the bar -> scroll position (fractional album). */
+    private fun barPos(x: Float): Float {
+        val pad = barPad(); val w = width - 2 * pad; val tw = barThumbW()
+        val frac = ((x - pad - tw / 2f) / max(1f, w - tw)).coerceIn(0f, 1f)
+        return frac * maxPos()
+    }
+    private fun onBar(y: Float) = albums.size >= 2 && !isOpen && y > height - context.dp(46f)
+
     private fun drawPositionBar(canvas: Canvas) {
         if (albums.size < 2 || open > 0.5f) return
-        val pad = context.dp(28f)
-        val y = height - context.dp(10f)
+        val k = scrubT
+        val pad = barPad()
+        val y = barY()
         val w = width - 2 * pad
         val frac = (position / maxPos()).coerceIn(0f, 1f)
-        val thumb = max(context.dp(24f), w / albums.size.toFloat())
-        val active = min(1f, 0.35f + abs(lean) / 6f)
-        barPaint.strokeWidth = context.dp(3f)
-        barPaint.color = ColorUtils.setAlphaComponent(textColor, 28)
-        canvas.drawLine(pad, y, pad + w, y, barPaint)
-        barPaint.color = ColorUtils.setAlphaComponent(accent, (255 * active).toInt())
-        val x0 = pad + (w - thumb) * frac
-        canvas.drawLine(x0, y, x0 + thumb, y, barPaint)
+        val tw = barThumbW()
+        val cx = pad + tw / 2f + (w - tw) * frac
+
+        // track: slim line at rest, a frosted groove while held
+        val trackH = context.dp(3f + 5f * k)
+        pill.set(pad, y - trackH / 2, pad + w, y + trackH / 2)
+        glassPaint.shader = null
+        glassPaint.color = ColorUtils.setAlphaComponent(textColor, (28 + 22 * k).toInt())
+        canvas.drawRoundRect(pill, trackH / 2, trackH / 2, glassPaint)
+
+        // thumb: accent pill at rest -> liquid glass capsule that stretches with speed
+        val stretch = min(abs(wobble) / 25f, 1f) * k
+        val baseW = tw + (context.dp(44f) - tw).coerceAtLeast(0f) * k
+        val thW = baseW * (1f + 0.55f * stretch)
+        val thH = context.dp(3f + 23f * k) * (1f - 0.22f * stretch)
+        // the capsule trails behind the motion a little, like a drop being dragged
+        val lag = -sign(wobble) * stretch * thW * 0.12f
+        pill.set(cx - thW / 2 + lag, y - thH / 2, cx + thW / 2 + lag, y + thH / 2)
+        val r = thH / 2
+        val active = min(1f, 0.35f + abs(lean) / 6f + k)
+        if (k < 0.02f) {
+            glassPaint.color = ColorUtils.setAlphaComponent(accent, (255 * active).toInt())
+            canvas.drawRoundRect(pill, r, r, glassPaint)
+        } else {
+            drawGlass(canvas, pill, r, k)
+        }
+
+        // letter bubble above the thumb (only while using the bar)
+        if (k > 0.02f) {
+            val g = albums.getOrNull(selected) ?: return
+            val ch = g.name.trim().firstOrNull()?.uppercaseChar()
+            val letter = when { ch == null -> "#"; ch.isLetter() -> ch.toString(); else -> "#" }
+            val size = context.dp(64f) * (0.6f + 0.4f * k)
+            val by = y - context.dp(26f) - size / 2 - context.dp(10f) * k
+            val bx = cx.coerceIn(size / 2 + context.dp(6f), width - size / 2 - context.dp(6f))
+            pill.set(bx - size / 2, by - size / 2, bx + size / 2, by + size / 2)
+            drawGlass(canvas, pill, size / 2, k)
+            letterPaint.color = ColorUtils.setAlphaComponent(textColor, (255 * k).toInt())
+            letterPaint.textSize = size * 0.5f
+            canvas.drawText(letter, bx, by - (letterPaint.descent() + letterPaint.ascent()) / 2f, letterPaint)
+        }
+    }
+
+    /** Apple-style liquid glass: frosted tint, bright rim, a soft highlight on top. */
+    private fun drawGlass(canvas: Canvas, rc: RectF, r: Float, k: Float) {
+        val a = k.coerceIn(0f, 1f)
+        // soft shadow under the glass
+        glassPaint.shader = null
+        glassPaint.color = ColorUtils.setAlphaComponent(0xFF000000.toInt(), (60 * a).toInt())
+        canvas.drawRoundRect(rc.left, rc.top + context.dp(2f), rc.right, rc.bottom + context.dp(3f), r, r, glassPaint)
+        // body: accent-tinted, mostly see-through
+        glassPaint.color = ColorUtils.setAlphaComponent(ColorUtils.blendARGB(accent, 0xFFFFFFFF.toInt(), 0.25f), (95 * a).toInt())
+        canvas.drawRoundRect(rc, r, r, glassPaint)
+        // top highlight
+        glassPaint.shader = LinearGradient(0f, rc.top, 0f, rc.centerY(),
+            ColorUtils.setAlphaComponent(0xFFFFFFFF.toInt(), (120 * a).toInt()), 0x00FFFFFF, Shader.TileMode.CLAMP)
+        canvas.drawRoundRect(rc.left + r * 0.18f, rc.top + context.dp(1.5f), rc.right - r * 0.18f, rc.centerY(), r, r, glassPaint)
+        glassPaint.shader = null
+        // rim
+        glassStroke.strokeWidth = context.dp(1f)
+        glassStroke.color = ColorUtils.setAlphaComponent(0xFFFFFFFF.toInt(), (110 * a).toInt())
+        canvas.drawRoundRect(rc, r, r, glassStroke)
     }
 
     private fun quadPath() {
@@ -376,7 +466,16 @@ class AlbumFlowView @JvmOverloads constructor(
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (albums.isEmpty()) return false
         when (e.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
+            MotionEvent.ACTION_DOWN -> if (onBar(e.y)) {
+                // grab the bar: the wall follows the finger, letters pop up
+                mode = Mode.SCRUB
+                scrubbing = true
+                scrubTarget = barPos(e.x)
+                parent?.requestDisallowInterceptTouchEvent(true)
+                performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+                startLoop()
+                return true
+            } else {
                 // catch the moving wall under the finger
                 val wasMoving = mode == Mode.FLING || (mode == Mode.SPRING && abs(vel) > 1.5f)
                 mode = Mode.DRAG
@@ -390,7 +489,11 @@ class AlbumFlowView @JvmOverloads constructor(
                 parent?.requestDisallowInterceptTouchEvent(true)
                 return true
             }
-            MotionEvent.ACTION_MOVE -> {
+            MotionEvent.ACTION_MOVE -> if (scrubbing) {
+                scrubTarget = barPos(e.x)
+                startLoop()
+                return true
+            } else {
                 velocity?.addMovement(e)
                 val dx = e.x - downX
                 if (!dragging && abs(dx) > touchSlop && !isOpen) {
@@ -416,7 +519,13 @@ class AlbumFlowView @JvmOverloads constructor(
                 }
                 return true
             }
-            MotionEvent.ACTION_UP -> {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (scrubbing) {
+                scrubbing = false
+                parent?.requestDisallowInterceptTouchEvent(false)
+                // keep the momentum a moment, then land on the album under the thumb
+                springTo(scrubTarget.roundToInt().toFloat().coerceIn(0f, maxPos()), 90f)
+                return true
+            } else if (e.actionMasked == MotionEvent.ACTION_UP) {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 val vt = velocity
                 vt?.addMovement(e)
@@ -434,8 +543,7 @@ class AlbumFlowView @JvmOverloads constructor(
                 }
                 caught = false
                 return true
-            }
-            MotionEvent.ACTION_CANCEL -> {
+            } else {
                 parent?.requestDisallowInterceptTouchEvent(false)
                 velocity?.recycle(); velocity = null
                 dragging = false; caught = false
@@ -447,6 +555,7 @@ class AlbumFlowView @JvmOverloads constructor(
     }
 
     private var caught = false
+    private var scrubbing = false
     private val maxFling = ViewConfiguration.get(context).scaledMaximumFlingVelocity.toFloat()
 
     /** Past the ends the wall resists more the further you pull (max ~0.6 album). */

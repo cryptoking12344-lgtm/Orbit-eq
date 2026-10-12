@@ -65,6 +65,9 @@ def main():
         sys.exit(0)
     x1, y1, x2, y2 = bounds(n)
     x = int(x1 + (x2 - x1) * fx); y = int(y1 + (y2 - y1) * fy)
+    if cmd == "point":   # just print the coordinates (for custom gestures)
+        print(f"{x} {y}")
+        return
     print(f"tap {kind}={value} at {x},{y}")
     sh("shell", "input", "tap", str(x), str(y))
 
