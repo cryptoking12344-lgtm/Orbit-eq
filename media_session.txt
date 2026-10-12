@@ -1,0 +1,4 @@
+  uid=10192 packages=com.ck.orbiteq 
+Media session config:
+  media_button_receiver_fgs_allowlist_duration_ms: [cur: 10000, def: 10000]
+  media_session_calback_fgs_allowlist_duration_ms: [cur: 10000, def: 10000]
