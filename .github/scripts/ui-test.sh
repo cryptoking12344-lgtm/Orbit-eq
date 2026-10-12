@@ -2,7 +2,7 @@
 # Runs inside the emulator job: installs the APK, taps through the app, takes screenshots.
 set -x
 mkdir -p shots
-shot() { sleep 1; adb exec-out screencap -p > "shots/$1.png"; }
+shot() { sleep 1; python3 .github/scripts/ui.py dismiss; adb exec-out screencap -p > "shots/$1.png"; }
 ui() { python3 .github/scripts/ui.py "$@"; }
 
 adb install -r OrbitEQ.apk
@@ -14,6 +14,8 @@ adb shell content call --uri content://media --method scan_volume --arg external
 sleep 8
 adb shell settings put global window_animation_scale 0.5
 adb logcat -c
+# the emulator home app sometimes freezes on first boot; park it behind a blank activity
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS || true
 
 adb shell am start -n com.ck.orbiteq/.MainActivity
 sleep 8; shot 01_library_songs

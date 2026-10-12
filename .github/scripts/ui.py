@@ -23,8 +23,25 @@ def bounds(n):
     x1, y1, x2, y2 = map(int, re.findall(r"\d+", n.get("bounds")))
     return x1, y1, x2, y2
 
+def dismiss_anr(root):
+    """Taps 'Wait' on emulator 'isn't responding' popups (system apps, not Orbit)."""
+    if root is None:
+        return root
+    for _ in range(3):
+        texts = [(n.get("text") or "") for n in root.iter("node")]
+        if not any("isn't responding" in t or "keeps stopping" in t for t in texts):
+            return root
+        for n in root.iter("node"):
+            if (n.get("text") or "") in ("Wait", "Close app", "OK"):
+                x1, y1, x2, y2 = bounds(n)
+                sh("shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+                break
+        time.sleep(1.5)
+        root = dump()
+    return root
+
 def find(kind, value, index=0):
-    root = dump()
+    root = dismiss_anr(dump())
     if root is None:
         return None
     hits = []
@@ -35,6 +52,9 @@ def find(kind, value, index=0):
     return hits[index] if len(hits) > index else None
 
 def main():
+    if sys.argv[1] == "dismiss":
+        dismiss_anr(dump())
+        return
     cmd, kind, value = sys.argv[1], sys.argv[2], sys.argv[3]
     fx = float(sys.argv[4]) if len(sys.argv) > 4 else 0.5
     fy = float(sys.argv[5]) if len(sys.argv) > 5 else 0.5
