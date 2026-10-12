@@ -62,7 +62,8 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
     }
 
     fun refresh() {
-        val keep = flow.selected
+        // first time: start in the middle so there are albums on both sides
+        val keep = if (albums.isEmpty()) MusicLibrary.albums.size / 2 else flow.selected
         albums = MusicLibrary.albums
         flow.setAlbums(albums, keep)
         if (albums.isEmpty()) {

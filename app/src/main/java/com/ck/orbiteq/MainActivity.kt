@@ -214,6 +214,11 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
 
     // ------------------------------------------------------------------ lifecycle
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(newBase)
+        Appearance.fontScaleOverride(newBase)?.let { applyOverrideConfiguration(it) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         Appearance.apply(this)
         super.onCreate(savedInstanceState)

@@ -31,14 +31,16 @@ ui tap id nav_player; sleep 3; shot 08_now_playing
 adb shell input swipe 540 1600 540 500 400; sleep 2; shot 09_player_sound_mode
 ui tap id nav_eq; sleep 3; shot 10_equalizer
 adb shell input swipe 540 1600 540 400 400; sleep 2; shot 11_eq_amp
-ui tap id btnSavePreset; sleep 1; adb shell input swipe 540 1600 540 400 300; sleep 2; shot 12_save_preset
+adb shell input swipe 540 500 540 2000 300; adb shell input swipe 540 500 540 2000 300; sleep 1
+ui tap id btnSavePreset; sleep 3; shot 12_save_preset
 adb shell input keyevent BACK; sleep 1
 ui tap id btnAppearance; sleep 3; shot 13_appearance
 ui tap text Retro; sleep 5; shot 14_retro_eq
 ui tap id nav_player; sleep 3; shot 15_retro_player
 ui tap id nav_library; sleep 3; shot 16_retro_library
 adb shell settings put system accelerometer_rotation 0
-adb shell settings put system user_rotation 1; sleep 5; shot 17_landscape_flow
+adb shell settings put system user_rotation 1; sleep 4
+ui tap text "Got it"; sleep 2; shot 17_landscape_flow
 ui tap id flowView 0.5 0.42; sleep 3; shot 18_landscape_flipped
 adb shell input keyevent BACK; sleep 1
 adb shell settings put system user_rotation 0; sleep 4

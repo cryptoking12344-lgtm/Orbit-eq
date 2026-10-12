@@ -124,7 +124,7 @@ class AlbumFlowView @JvmOverloads constructor(
     }
 
     private fun wide() = width > height * 1.2f
-    private fun cardPx(): Float = if (wide()) height * 0.6f else min(width * 0.6f, height * 0.62f)
+    private fun cardPx(): Float = if (wide()) height * 0.6f else min(width * 0.52f, height * 0.6f)
     private fun cardCenterY(): Float = if (wide()) height * 0.42f else height * 0.44f
     private fun spacingPx(): Float = cardPx() * (if (effect == FlowMath.FLOW) (if (wide()) 0.45f else 0.38f) else 0.55f)
 

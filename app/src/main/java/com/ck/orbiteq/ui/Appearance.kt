@@ -28,7 +28,7 @@ object Appearance {
     val VIZ_NAMES = arrayOf("Bars", "Peaks", "Wave")
     val FLOW_NAMES = arrayOf("Cover Flow", "Wheel", "Stack", "Glide")
 
-    private fun prefs(ctx: Context) = ctx.applicationContext.getSharedPreferences("orbit_look", Context.MODE_PRIVATE)
+    private fun prefs(ctx: Context) = (ctx.applicationContext ?: ctx).getSharedPreferences("orbit_look", Context.MODE_PRIVATE)
 
     fun theme(ctx: Context) = prefs(ctx).getInt("theme", THEME_ORBIT).coerceIn(0, 2)
     fun accent(ctx: Context) = prefs(ctx).getInt("accent", -1).let { if (it in 0..4) it else defaultAccent(theme(ctx)) }
@@ -41,6 +41,14 @@ object Appearance {
     fun setAccent(ctx: Context, a: Int) = prefs(ctx).edit().putInt("accent", a).apply()
     fun setVizStyle(ctx: Context, v: Int) = prefs(ctx).edit().putInt("viz", v).apply()
     fun setFlowEffect(ctx: Context, f: Int) = prefs(ctx).edit().putInt("flow", f).apply()
+
+    /** The Retro pixel font draws small, so Retro gets 30 % larger text. Call from attachBaseContext. */
+    fun fontScaleOverride(base: Context): android.content.res.Configuration? {
+        if (theme(base) != THEME_RETRO) return null
+        return android.content.res.Configuration().apply {
+            fontScale = base.resources.configuration.fontScale * 1.3f
+        }
+    }
 
     /** Call before super.onCreate / setContentView. */
     fun apply(activity: Activity) {

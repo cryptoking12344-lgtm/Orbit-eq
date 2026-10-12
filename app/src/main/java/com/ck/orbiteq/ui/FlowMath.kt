@@ -69,8 +69,8 @@ object FlowMath {
                 out.alpha = if (a > lim) 0f else 1f - 0.45f * t
             }
             else -> { // FLOW — tilted covers, the classic phone carousel
-                val first = if (wide) 0.86f else 0.58f
-                val step = if (wide) 0.32f else 0.17f
+                val first = if (wide) 0.86f else 0.62f
+                val step = if (wide) 0.32f else 0.12f
                 out.x = sg * (t * first + max(0f, a - 1f) * step)
                 out.z = -0.32f * (1f - t) + 0.28f * t
                 out.rotY = -sg * t * (if (wide) 62f else 66f)
