@@ -216,7 +216,10 @@ class AlbumFlowView @JvmOverloads constructor(
             Mode.SCRUB -> {
                 // the wall chases the finger on the bar; its speed drives the lean like a swipe
                 val prev = position
-                position += (scrubTarget - position) * min(1f, dt * 16f)
+                // moving: follow the finger exactly; finger resting: settle onto the nearest album
+                val settle = 1f - min(abs(vel) / 3f, 1f)
+                val aim = scrubTarget + (scrubTarget.roundToInt() - scrubTarget) * settle
+                position += (aim - position) * min(1f, dt * 16f)
                 val v = (position - prev) / dt
                 vel += (v - vel) * min(1f, dt * 20f)
             }
