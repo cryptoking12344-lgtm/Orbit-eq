@@ -12,7 +12,6 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import com.ck.orbiteq.R
 import com.ck.orbiteq.dsp.Space360Processor
@@ -51,12 +50,12 @@ class SpeakerMapView @JvmOverloads constructor(
     private var active = -1
     private var enabledLook = true
     private val dp = resources.displayMetrics.density
-    private val accent = ContextCompat.getColor(context, R.color.accent)
-    private val accent2 = ContextCompat.getColor(context, R.color.accent2)
-    private val textCol = ContextCompat.getColor(context, R.color.text)
-    private val dim = ContextCompat.getColor(context, R.color.text_dim)
-    private val grid = ContextCompat.getColor(context, R.color.grid)
-    private val surface2 = ContextCompat.getColor(context, R.color.surface2)
+    private val accent = context.attrColor(R.attr.oAccent)
+    private val accent2 = context.attrColor(R.attr.oAccent2)
+    private val textCol = context.attrColor(R.attr.oText)
+    private val dim = context.attrColor(R.attr.oTextDim)
+    private val grid = context.attrColor(R.attr.oGrid)
+    private val surface2 = context.attrColor(R.attr.oSurface2)
 
     private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeWidth = 1.2f * dp; color = grid

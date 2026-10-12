@@ -12,7 +12,6 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import com.ck.orbiteq.R
 import com.ck.orbiteq.model.EqSettings
@@ -30,31 +29,34 @@ class EqCurveView @JvmOverloads constructor(
     /** (gains, finished) — finished is true when the finger lifts. */
     var onGainsChanged: ((FloatArray, Boolean) -> Unit)? = null
 
+    /** false = preview only (no dragging). */
+    var interactive = true
+
     private val gains = FloatArray(EqSettings.BANDS)
     private var active = -1
     private val maxDb = EqSettings.GAIN_MAX
     private val dp = resources.displayMetrics.density
-    private val accent = ContextCompat.getColor(context, R.color.accent)
-    private val accent2 = ContextCompat.getColor(context, R.color.accent2)
+    private val accent = context.attrColor(R.attr.oAccent)
+    private val accent2 = context.attrColor(R.attr.oAccent2)
 
     private fun sp(v: Float) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, v, resources.displayMetrics)
 
     private val gridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.grid)
+        color = context.attrColor(R.attr.oGrid)
         strokeWidth = 1f * dp
     }
     private val zeroPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.text_dim)
+        color = context.attrColor(R.attr.oTextDim)
         alpha = 90
         strokeWidth = 1.2f * dp
     }
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.text_dim)
+        color = context.attrColor(R.attr.oTextDim)
         textSize = sp(10f)
         textAlign = Paint.Align.CENTER
     }
     private val valuePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.text)
+        color = context.attrColor(R.attr.oText)
         textSize = sp(12f)
         textAlign = Paint.Align.CENTER
         typeface = Typeface.DEFAULT_BOLD
@@ -67,7 +69,7 @@ class EqCurveView @JvmOverloads constructor(
     }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val knobPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, R.color.surface)
+        color = context.attrColor(R.attr.oSurface)
     }
     private val knobRing = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -155,6 +157,7 @@ class EqCurveView @JvmOverloads constructor(
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (!interactive) return false
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 val span = (plotR() - plotL()) / EqSettings.BANDS

@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg"
+    android:background="?attr/oBg">
+
+<LinearLayout
+    android:id="@+id/mainColumn"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
@@ -27,8 +32,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:id="@+id/txtHeaderTitle"
+                android:fontFamily="?attr/oTitleFont"
                 android:text="@string/app_name"
-                android:textColor="@color/text"
+                android:textColor="?attr/oText"
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
@@ -37,16 +44,24 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/global_off"
-                android:textColor="@color/text_dim"
+                android:textColor="?attr/oTextDim"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAppearance"
+            style="@style/IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/appearance"
+            app:icon="@drawable/ic_palette" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/switchGlobal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/system_wide"
-            android:textColor="@color/text" />
+            android:textColor="?attr/oText" />
     </LinearLayout>
 
     <FrameLayout
@@ -54,13 +69,21 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
+        <!-- ===================== LIBRARY PAGE ===================== -->
+        <include
+            android:id="@+id/pageLibrary"
+            layout="@layout/page_library"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
         <!-- ===================== EQUALIZER PAGE ===================== -->
         <ScrollView
             android:id="@+id/pageEq"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingBottom="24dp">
+            android:paddingBottom="24dp"
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -126,6 +149,14 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/reset" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnSavePreset"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/save"
+                                app:icon="@drawable/ic_save" />
                         </LinearLayout>
 
                         <com.ck.orbiteq.ui.EqCurveView
@@ -254,6 +285,103 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- AMP: like a DAC / headphone amp -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/OrbitCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/SectionTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/amp" />
+
+                        <TextView
+                            style="@style/Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/amp_sub"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/lblWarmth"
+                            style="@style/Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp" />
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/sliderWarmth"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:value="0"
+                            android:valueFrom="0"
+                            android:valueTo="1"
+                            app:labelBehavior="gone" />
+
+                        <TextView
+                            android:id="@+id/lblCrossfeed"
+                            style="@style/Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/sliderCrossfeed"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:value="0"
+                            android:valueFrom="0"
+                            android:valueTo="1"
+                            app:labelBehavior="gone" />
+
+                        <TextView
+                            style="@style/Label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/amp_gain" />
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/toggleGain"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/gainLow"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/gain_low" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/gainHigh"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/gain_high" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <TextView
+                            style="@style/Label"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/amp_note"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <TextView
                     android:id="@+id/txtStatus"
                     style="@style/Label"
@@ -266,7 +394,7 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- ===================== 8D PLAYER PAGE ===================== -->
+        <!-- ===================== PLAYER PAGE ===================== -->
         <ScrollView
             android:id="@+id/pagePlayer"
             android:layout_width="match_parent"
@@ -283,181 +411,7 @@
                 android:paddingTop="4dp"
                 android:paddingEnd="16dp">
 
-                <!-- YOUTUBE -->
-                <com.google.android.material.card.MaterialCardView
-                    style="@style/OrbitCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="14dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <TextView
-                            style="@style/SectionTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/yt_title" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:hint="@string/yt_hint"
-                            app:endIconMode="clear_text">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/editYt"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:imeOptions="actionGo"
-                                android:inputType="textUri"
-                                android:singleLine="true" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnYtPaste"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/yt_paste" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnYtPlay"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:layout_weight="1"
-                                android:text="@string/play"
-                                app:icon="@drawable/ic_play" />
-                        </LinearLayout>
-
-                        <com.google.android.material.progressindicator.LinearProgressIndicator
-                            android:id="@+id/progressYt"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:visibility="gone"
-                            app:trackCornerRadius="4dp" />
-
-                        <TextView
-                            android:id="@+id/txtYtStatus"
-                            style="@style/Label"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="@string/yt_sub"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    style="@style/OrbitCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <com.ck.orbiteq.ui.VisualizerView
-                            android:id="@+id/vizPlayer"
-                            android:layout_width="match_parent"
-                            android:layout_height="170dp" />
-
-                        <TextView
-                            android:id="@+id/txtTrack"
-                            style="@style/SectionTitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:ellipsize="end"
-                            android:singleLine="true"
-                            android:text="@string/no_song" />
-
-                        <TextView
-                            android:id="@+id/txtTrackSub"
-                            style="@style/Label"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/open_hint" />
-
-                        <com.google.android.material.slider.Slider
-                            android:id="@+id/sliderSeek"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:value="0"
-                            android:valueFrom="0"
-                            android:valueTo="1"
-                            app:labelBehavior="gone" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp">
-
-                            <TextView
-                                android:id="@+id/txtPos"
-                                style="@style/Label"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="0:00" />
-
-                            <TextView
-                                android:id="@+id/txtDur"
-                                style="@style/Label"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="0:00" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:gravity="center"
-                            android:orientation="horizontal">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnOpen"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/open" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnPlay"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="@string/play"
-                                app:icon="@drawable/ic_play" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnStop"
-                                style="@style/Widget.Material3.Button.OutlinedButton"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="10dp"
-                                android:text="@string/stop" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                <include layout="@layout/view_now_playing" />
 
                 <!-- SOUND MODE: Off / Theater / 360 -->
                 <com.google.android.material.card.MaterialCardView
@@ -712,7 +666,7 @@
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
                                         android:text="@string/xm4_fix"
-                                        android:textColor="@color/text"
+                                        android:textColor="?attr/oText"
                                         android:textSize="14sp" />
 
                                     <TextView
@@ -729,6 +683,84 @@
                                     android:layout_height="wrap_content" />
                             </LinearLayout>
                         </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- YOUTUBE -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/OrbitCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            style="@style/SectionTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/yt_title" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:hint="@string/yt_hint"
+                            app:endIconMode="clear_text">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/editYt"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:imeOptions="actionGo"
+                                android:inputType="textUri"
+                                android:singleLine="true" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnYtPaste"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/yt_paste" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnYtPlay"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:text="@string/play"
+                                app:icon="@drawable/ic_play" />
+                        </LinearLayout>
+
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/progressYt"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:visibility="gone"
+                            app:trackCornerRadius="4dp" />
+
+                        <TextView
+                            android:id="@+id/txtYtStatus"
+                            style="@style/Label"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="@string/yt_sub"
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -782,7 +814,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
-                            android:textColor="@color/text"
+                            android:textColor="?attr/oText"
                             android:textSize="14sp" />
 
                         <com.google.android.material.button.MaterialButton
@@ -883,10 +915,22 @@
         </ScrollView>
     </FrameLayout>
 
+    <include layout="@layout/view_mini_player" />
+
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface"
+        android:background="?attr/oSurface"
         app:menu="@menu/bottom_nav" />
 </LinearLayout>
+
+    <!-- full-screen album flow when the phone is turned sideways -->
+    <FrameLayout
+        android:id="@+id/landOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/oBg"
+        android:clickable="true"
+        android:visibility="gone" />
+</FrameLayout>

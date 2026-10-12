@@ -49,10 +49,12 @@ class DspChain(sampleRate: Int) {
     private var theaterOn = false
     private val space = Space360Processor(sampleRate)
     private var spaceOn = false
+    private val amp = AmpProcessor(sampleRate)
 
     private fun dbToLin(db: Float) = 10.0.pow(db / 20.0).toFloat()
 
-    fun configure(s: EqSettings, t: AudioState.Theater, sp: AudioState.Space) {
+    fun configure(s: EqSettings, t: AudioState.Theater, sp: AudioState.Space, a: AudioState.Amp) {
+        amp.configure(a.toParams())
         if (t.enabled && !theaterOn) theater.reset()
         theaterOn = t.enabled
         theater.configure(t.toParams())
@@ -94,6 +96,7 @@ class DspChain(sampleRate: Int) {
         reverb.reset()
         theater.reset()
         space.reset()
+        amp.reset()
         limiter.reset()
     }
 
@@ -126,6 +129,7 @@ class DspChain(sampleRate: Int) {
                 reverb.process(buf, frames)
             }
         }
+        amp.process(buf, frames)
         if (loud != 1f) {
             for (i in 0 until frames * 2) buf[i] *= loud
         }

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/wbg_original"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <ImageView
+        android:id="@+id/w_art"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.42"
+        android:adjustViewBounds="true"
+        android:clipToOutline="true"
+        android:contentDescription="@string/album_art"
+        android:maxWidth="200dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/wart_placeholder" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="12dp"
+        android:layout_weight="0.58"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/w_lcd"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/wlcd_none"
+            android:orientation="vertical"
+            android:paddingStart="6dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:id="@+id/w_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="@string/app_name"
+                android:textColor="#FFF4F4F8"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/w_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="@string/widget_idle"
+                android:textColor="#FF9A9AAE"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/w_prev"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/wbtn_none"
+                android:contentDescription="@string/previous"
+                android:scaleType="center"
+                android:src="@drawable/ic_prev" />
+
+            <ImageButton
+                android:id="@+id/w_play"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/wbtn_original"
+                android:contentDescription="@string/play"
+                android:scaleType="center"
+                android:src="@drawable/ic_play" />
+
+            <ImageButton
+                android:id="@+id/w_next"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/wbtn_none"
+                android:contentDescription="@string/next"
+                android:scaleType="center"
+                android:src="@drawable/ic_next" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

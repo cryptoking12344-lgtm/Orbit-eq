@@ -2,7 +2,13 @@ package com.ck.orbiteq.model
 
 enum class ProfileKind { SOUND, HEADPHONE, CUSTOM }
 
-class Profile(val name: String, val settings: EqSettings, val kind: ProfileKind)
+class Profile(
+    val name: String,
+    val settings: EqSettings,
+    val kind: ProfileKind,
+    /** false = only the EQ curve + preamp are applied, effects stay as they are. */
+    val withEffects: Boolean = kind != ProfileKind.SOUND,
+)
 
 object Presets {
 

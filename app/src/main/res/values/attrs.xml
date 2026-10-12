@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Orbit theme tokens: every screen reads its colours from these -->
+    <attr name="oBg" format="color" />
+    <attr name="oSurface" format="color" />
+    <attr name="oSurface2" format="color" />
+    <attr name="oGrid" format="color" />
+    <attr name="oText" format="color" />
+    <attr name="oTextDim" format="color" />
+    <attr name="oAccent" format="color" />
+    <attr name="oAccent2" format="color" />
+    <attr name="oAccentDim" format="color" />
+    <attr name="oOnAccent" format="color" />
+    <attr name="oCardRadius" format="dimension" />
+    <attr name="oCardStroke" format="dimension" />
+    <attr name="oCardStrokeColor" format="color" />
+    <attr name="oTitleFont" format="reference" />
+    <attr name="oBodyFont" format="reference" />
+    <attr name="oIsRetro" format="boolean" />
+</resources>

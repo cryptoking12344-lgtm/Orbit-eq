@@ -79,7 +79,7 @@ class GlobalEffectsService : Service() {
             for (d in list) {
                 if (!DeviceUtil.isHeadphone(d)) continue
                 val profile = AudioState.profileForDevice(DeviceUtil.key(d)) ?: continue
-                AudioState.setEq(profile.settings.copy())
+                AudioState.applyProfile(profile)
                 Toast.makeText(
                     this@GlobalEffectsService,
                     getString(R.string.applied, profile.name),
@@ -148,7 +148,7 @@ class GlobalEffectsService : Service() {
         if (chains.containsKey(session)) return
         val chain = EffectChain(session)
         if (!chain.worksAtAll && session != 0) return
-        chain.apply(AudioState.eq)
+        chain.apply(AudioState.eq, ampGain())
         chains[session] = chain
         updateStatus()
     }
@@ -158,9 +158,11 @@ class GlobalEffectsService : Service() {
         updateStatus()
     }
 
+    private fun ampGain() = if (AudioState.amp.gainHigh) 6f else 0f
+
     private fun applyAll() {
         val s = AudioState.eq
-        for (c in chains.values) c.apply(s)
+        for (c in chains.values) c.apply(s, ampGain())
     }
 
     private fun updateStatus() {

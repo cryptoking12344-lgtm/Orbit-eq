@@ -1,35 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- ORBIT: deep navy, violet + cyan (the original look) -->
     <style name="Theme.OrbitEQ" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@color/accent</item>
-        <item name="colorOnPrimary">@color/black</item>
-        <item name="colorSecondary">@color/accent2</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <item name="colorSecondaryContainer">@color/accent_dim</item>
-        <item name="colorOnSecondaryContainer">@color/text</item>
-        <item name="colorSurface">@color/surface</item>
-        <item name="colorOnSurface">@color/text</item>
-        <item name="colorOnSurfaceVariant">@color/text_dim</item>
-        <item name="android:colorBackground">@color/bg</item>
-        <item name="android:statusBarColor">@color/bg</item>
-        <item name="android:navigationBarColor">@color/surface</item>
+        <item name="oBg">#FF0A0A0F</item>
+        <item name="oSurface">#FF15151D</item>
+        <item name="oSurface2">#FF222230</item>
+        <item name="oGrid">#FF2A2A38</item>
+        <item name="oText">#FFF4F4F8</item>
+        <item name="oTextDim">#FF9A9AAE</item>
+        <item name="oAccent">#FFA78BFA</item>
+        <item name="oAccent2">#FF22D3EE</item>
+        <item name="oAccentDim">#FF3B2F66</item>
+        <item name="oOnAccent">#FF0A0A0F</item>
+        <item name="oCardRadius">22dp</item>
+        <item name="oCardStroke">0dp</item>
+        <item name="oCardStrokeColor">#00000000</item>
+        <item name="oTitleFont">@font/orbit_sora</item>
+        <item name="oBodyFont">@font/orbit_sora</item>
+        <item name="oIsRetro">false</item>
+        <item name="android:fontFamily">@font/orbit_sora</item>
+        <item name="fontFamily">@font/orbit_sora</item>
+
+        <item name="colorPrimary">?attr/oAccent</item>
+        <item name="colorOnPrimary">?attr/oOnAccent</item>
+        <item name="colorPrimaryContainer">?attr/oAccentDim</item>
+        <item name="colorOnPrimaryContainer">?attr/oText</item>
+        <item name="colorSecondary">?attr/oAccent2</item>
+        <item name="colorOnSecondary">?attr/oOnAccent</item>
+        <item name="colorSecondaryContainer">?attr/oAccentDim</item>
+        <item name="colorOnSecondaryContainer">?attr/oText</item>
+        <item name="colorSurface">?attr/oSurface</item>
+        <item name="colorSurfaceContainer">?attr/oSurface</item>
+        <item name="colorSurfaceContainerHigh">?attr/oSurface2</item>
+        <item name="colorSurfaceContainerLow">?attr/oSurface</item>
+        <item name="colorOnSurface">?attr/oText</item>
+        <item name="colorOnSurfaceVariant">?attr/oTextDim</item>
+        <item name="colorOutline">?attr/oGrid</item>
+        <item name="colorOutlineVariant">?attr/oGrid</item>
+        <item name="android:colorBackground">?attr/oBg</item>
+        <item name="android:windowBackground">?attr/oBg</item>
+        <item name="android:statusBarColor">?attr/oBg</item>
+        <item name="android:navigationBarColor">?attr/oSurface</item>
+    </style>
+
+    <!-- MIDNIGHT: pure black for OLED, one accent -->
+    <style name="Theme.OrbitEQ.Midnight">
+        <item name="oBg">#FF000000</item>
+        <item name="oSurface">#FF0B0B0E</item>
+        <item name="oSurface2">#FF16161B</item>
+        <item name="oGrid">#FF1F1F26</item>
+        <item name="oText">#FFF4F4F8</item>
+        <item name="oTextDim">#FF8A8A93</item>
+        <item name="oAccent">#FF5EEAD4</item>
+        <item name="oAccent2">#FFF4F4F8</item>
+        <item name="oAccentDim">#FF12302C</item>
+        <item name="oOnAccent">#FF000000</item>
+        <item name="oCardRadius">18dp</item>
+        <item name="oCardStroke">1dp</item>
+        <item name="oCardStrokeColor">#FF1A1A1F</item>
+        <item name="oTitleFont">@font/orbit_manrope</item>
+        <item name="oBodyFont">@font/orbit_manrope</item>
+        <item name="android:fontFamily">@font/orbit_manrope</item>
+        <item name="fontFamily">@font/orbit_manrope</item>
+    </style>
+
+    <!-- RETRO: grey bevels, green LCD, pixel type (2000s desktop player feel) -->
+    <style name="Theme.OrbitEQ.Retro">
+        <item name="oBg">#FF14141C</item>
+        <item name="oSurface">#FF3A3A4A</item>
+        <item name="oSurface2">#FF22223A</item>
+        <item name="oGrid">#FF5A5A6E</item>
+        <item name="oText">#FFE8E8F0</item>
+        <item name="oTextDim">#FFB4B4C6</item>
+        <item name="oAccent">#FF3BE36A</item>
+        <item name="oAccent2">#FFF5D33A</item>
+        <item name="oAccentDim">#FF1E3A26</item>
+        <item name="oOnAccent">#FF000000</item>
+        <item name="oCardRadius">0dp</item>
+        <item name="oCardStroke">2dp</item>
+        <item name="oCardStrokeColor">#FF8E8EA2</item>
+        <item name="oTitleFont">@font/silkscreen</item>
+        <item name="oBodyFont">@font/vt323</item>
+        <item name="oIsRetro">true</item>
+        <item name="android:fontFamily">@font/vt323</item>
+        <item name="fontFamily">@font/vt323</item>
+    </style>
+
+    <!-- Accent colours (Orbit and Midnight) -->
+    <style name="Accent.Violet" parent="">
+        <item name="oAccent">#FFA78BFA</item>
+        <item name="oAccentDim">#FF3B2F66</item>
+    </style>
+    <style name="Accent.Cyan" parent="">
+        <item name="oAccent">#FF22D3EE</item>
+        <item name="oAccentDim">#FF0E3A44</item>
+    </style>
+    <style name="Accent.Mint" parent="">
+        <item name="oAccent">#FF5EEAD4</item>
+        <item name="oAccentDim">#FF12302C</item>
+    </style>
+    <style name="Accent.Amber" parent="">
+        <item name="oAccent">#FFFBBF24</item>
+        <item name="oAccentDim">#FF3F2E06</item>
+    </style>
+    <style name="Accent.Rose" parent="">
+        <item name="oAccent">#FFFB7185</item>
+        <item name="oAccentDim">#FF4A1622</item>
     </style>
 
     <style name="OrbitCard" parent="Widget.Material3.CardView.Filled">
-        <item name="cardBackgroundColor">@color/surface</item>
-        <item name="cardCornerRadius">22dp</item>
+        <item name="cardBackgroundColor">?attr/oSurface</item>
+        <item name="cardCornerRadius">?attr/oCardRadius</item>
+        <item name="strokeWidth">?attr/oCardStroke</item>
+        <item name="strokeColor">?attr/oCardStrokeColor</item>
         <item name="contentPadding">18dp</item>
     </style>
 
     <style name="SectionTitle">
-        <item name="android:textColor">@color/text</item>
+        <item name="android:textColor">?attr/oText</item>
         <item name="android:textSize">17sp</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">?attr/oTitleFont</item>
     </style>
 
     <style name="Label">
-        <item name="android:textColor">@color/text_dim</item>
+        <item name="android:textColor">?attr/oTextDim</item>
         <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="ArtCorners" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">10dp</item>
+    </style>
+
+    <style name="ArtCornersBig" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="IconButton" parent="Widget.Material3.Button.IconButton">
+        <item name="iconTint">?attr/oText</item>
+        <item name="iconSize">24dp</item>
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
     </style>
 </resources>

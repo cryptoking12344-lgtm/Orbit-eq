@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- stands in for a home-screen wallpaper so the glass style can be judged -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="135" android:endColor="#FF0E7490" android:startColor="#FF7C3AED" />
+    <corners android:radius="14dp" />
+</shape>

@@ -70,7 +70,7 @@ class EffectChain(val session: Int) {
 
     val worksAtAll: Boolean get() = dp != null || virt != null || rev != null
 
-    fun apply(s: EqSettings) {
+    fun apply(s: EqSettings, extraGainDb: Float = 0f) {
         dp?.let { d ->
             try {
                 for (i in 0 until EqSettings.BANDS) {
@@ -82,7 +82,7 @@ class EffectChain(val session: Int) {
                     }
                     d.setPreEqBandAllChannelsTo(i, DynamicsProcessing.EqBand(true, CUTOFFS[i], g))
                 }
-                d.setInputGainAllChannelsTo(s.preamp + s.loudness)
+                d.setInputGainAllChannelsTo(s.preamp + s.loudness + extraGainDb)
             } catch (_: Throwable) {
             }
         }

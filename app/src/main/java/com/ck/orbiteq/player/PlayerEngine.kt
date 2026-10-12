@@ -59,6 +59,9 @@ object PlayerEngine {
     private var uri: Uri? = null
     private var focusRequest: AudioFocusRequest? = null
 
+    /** Called when a song finishes by itself; return true if the next song was started. */
+    var onComplete: (() -> Boolean)? = null
+
     fun addListener(l: Listener) {
         listeners.add(l)
     }
@@ -114,6 +117,7 @@ object PlayerEngine {
         paused = true
         state = state.copy(playing = false)
         publish()
+        PlayQueue.savePosition(state.positionMs)
     }
 
     fun togglePlay() {
@@ -325,7 +329,7 @@ object PlayerEngine {
                         val v = AudioState.version
                         if (v != dspVersion) {
                             dspVersion = v
-                            dsp.configure(AudioState.eq, AudioState.theater, AudioState.space)
+                            dsp.configure(AudioState.eq, AudioState.theater, AudioState.space, AudioState.amp)
                         }
                         dsp.process(stereo, frames)
 
@@ -372,7 +376,10 @@ object PlayerEngine {
             main.post {
                 state = state.copy(playing = false, positionMs = 0)
                 publish()
-                PlaybackService.stop(ctx)
+                if (onComplete?.invoke() != true) {
+                    abandonFocus()
+                    PlaybackService.stop(ctx)
+                }
             }
         }
     }

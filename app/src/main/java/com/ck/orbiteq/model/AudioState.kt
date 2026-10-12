@@ -70,6 +70,24 @@ object AudioState {
     @Volatile var space: Space = Space()
         private set
 
+    /** DAC / headphone-amp style stage (player); output gain also applies system-wide. */
+    class Amp(
+        val warmth: Float = 0f,
+        val crossfeed: Float = 0f,
+        val gainHigh: Boolean = false,
+    ) {
+        fun copy(
+            warmth: Float = this.warmth,
+            crossfeed: Float = this.crossfeed,
+            gainHigh: Boolean = this.gainHigh,
+        ) = Amp(warmth, crossfeed, gainHigh)
+
+        fun toParams() = com.ck.orbiteq.dsp.AmpParams(warmth, crossfeed, gainHigh)
+    }
+
+    @Volatile var amp: Amp = Amp()
+        private set
+
     const val MODE_OFF = 0
     const val MODE_THEATER = 1
     const val MODE_360 = 2
@@ -117,6 +135,11 @@ object AudioState {
             p.getFloat("sp_rot", 0f).coerceIn(-180f, 180f),
             p.getInt("sp_head", 1).coerceIn(0, 2),
         )
+        amp = Amp(
+            p.getFloat("amp_warm", 0f).coerceIn(0f, 1f),
+            p.getFloat("amp_cross", 0f).coerceIn(0f, 1f),
+            p.getBoolean("amp_high", false),
+        )
         version++
     }
 
@@ -156,6 +179,19 @@ object AudioState {
                 ?.putFloat("sp_height", sp.height)
                 ?.putFloat("sp_rot", sp.rotation)
                 ?.putInt("sp_head", sp.headSize)
+                ?.apply()
+        }
+        notifyListeners()
+    }
+
+    fun setAmp(a: Amp, persist: Boolean = true) {
+        amp = a
+        version++
+        if (persist) {
+            prefs?.edit()
+                ?.putFloat("amp_warm", a.warmth)
+                ?.putFloat("amp_cross", a.crossfeed)
+                ?.putBoolean("amp_high", a.gainHigh)
                 ?.apply()
         }
         notifyListeners()
@@ -207,16 +243,40 @@ object AudioState {
         while (keys.hasNext()) {
             val k = keys.next()
             val obj = o.optJSONObject(k) ?: continue
-            out.add(Profile(k, EqSettings.fromJson(obj), ProfileKind.CUSTOM))
+            out.add(Profile(k, EqSettings.fromJson(obj), ProfileKind.CUSTOM, obj.optBoolean("fx", true)))
         }
         out.sortBy { it.name.lowercase() }
         return out
     }
 
-    fun saveProfile(name: String, s: EqSettings) {
+    fun saveProfile(name: String, s: EqSettings, withEffects: Boolean = true) {
         val o = profilesJson()
-        o.put(name, s.toJson())
+        o.put(name, s.toJson().put("fx", withEffects))
         prefs?.edit()?.putString("profiles", o.toString())?.apply()
+        notifyListeners()
+    }
+
+    fun renameProfile(old: String, new: String): Boolean {
+        val o = profilesJson()
+        if (new.isBlank() || o.has(new)) return false
+        val obj = o.optJSONObject(old) ?: return false
+        o.remove(old)
+        o.put(new, obj)
+        val links = linksJson()
+        val keys = links.keys().asSequence().toList()
+        for (k in keys) if (links.optString(k) == old) links.put(k, new)
+        prefs?.edit()
+            ?.putString("profiles", o.toString())
+            ?.putString("links", links.toString())
+            ?.apply()
+        notifyListeners()
+        return true
+    }
+
+    /** Applies a preset; presets saved without effects only change the curve and preamp. */
+    fun applyProfile(p: Profile) {
+        if (p.withEffects) setEq(p.settings.copy())
+        else setEq(eq.copy(gains = p.settings.gains.copyOf(), preamp = p.settings.preamp))
     }
 
     fun deleteProfile(name: String) {
@@ -229,6 +289,7 @@ object AudioState {
             ?.putString("profiles", o.toString())
             ?.putString("links", links.toString())
             ?.apply()
+        notifyListeners()
     }
 
     fun findProfile(name: String): Profile? =
