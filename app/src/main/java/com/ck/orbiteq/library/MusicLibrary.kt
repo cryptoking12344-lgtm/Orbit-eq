@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.MediaScannerConnection
+import android.os.Environment
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +13,8 @@ import android.provider.MediaStore
 import androidx.core.content.ContextCompat
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.Executors
 
 /** Reads the songs on the phone (Android's media library) and groups them. */
@@ -36,6 +40,8 @@ object MusicLibrary {
         private set
 
     private val byId = HashMap<Long, Track>()
+    /** File paths Android has already indexed (to spot new files on refresh). */
+    @Volatile private var knownPaths: Set<String> = emptySet()
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
     private val main = Handler(Looper.getMainLooper())
     private val exec = Executors.newSingleThreadExecutor()
@@ -74,6 +80,63 @@ object MusicLibrary {
         }
     }
 
+    private val AUDIO_EXT = setOf("mp3", "m4a", "aac", "flac", "wav", "ogg", "oga", "opus", "wma", "amr", "alac", "aiff", "aif", "mka", "3gp")
+
+    /**
+     * Refresh: finds audio files Android hasn't indexed yet (new downloads, copied files),
+     * asks the media scanner to add them, then reloads. [done] gets the number of new songs.
+     */
+    fun rescan(ctx: Context, done: (Int) -> Unit) {
+        if (!hasPermission(ctx)) { done(0); return }
+        val app = ctx.applicationContext
+        val before = songs.map { it.id }.toHashSet()
+        exec.execute {
+            try {
+                val fresh = findUnindexed()
+                if (fresh.isNotEmpty()) {
+                    val latch = CountDownLatch(fresh.size)
+                    MediaScannerConnection.scanFile(app, fresh.toTypedArray(), null) { _, _ -> latch.countDown() }
+                    latch.await(20, TimeUnit.SECONDS)
+                }
+            } catch (_: Exception) { }
+            main.post {
+                val once = object : () -> Unit {
+                    override fun invoke() {
+                        removeListener(this)
+                        done(songs.count { it.id !in before })
+                    }
+                }
+                if (loading) { done(0); return@post }
+                addListener(once)
+                load(app, force = true)
+            }
+        }
+    }
+
+    /** Walks the usual music folders for audio files that aren't in Android's library yet. */
+    private fun findUnindexed(): List<String> {
+        val root = Environment.getExternalStorageDirectory() ?: return emptyList()
+        val dirs = listOf(
+            Environment.DIRECTORY_MUSIC, Environment.DIRECTORY_DOWNLOADS, Environment.DIRECTORY_DOCUMENTS,
+            Environment.DIRECTORY_PODCASTS, "Recordings", "Audiobooks", "Telegram", "Snaptube", "Bluetooth",
+        ).map { File(root, it) }.filter { it.isDirectory }
+        val known = knownPaths
+        val out = ArrayList<String>()
+        var seen = 0
+        fun walk(d: File, depth: Int) {
+            if (depth > 6 || seen > 20000 || out.size > 2000) return
+            val kids = try { d.listFiles() } catch (_: Exception) { null } ?: return
+            for (f in kids) {
+                seen++
+                if (f.name.startsWith(".")) continue
+                if (f.isDirectory) walk(f, depth + 1)
+                else if (f.extension.lowercase() in AUDIO_EXT && f.length() > 32_000 && f.absolutePath !in known) out.add(f.absolutePath)
+            }
+        }
+        for (d in dirs) walk(d, 0)
+        return out
+    }
+
     private fun query(ctx: Context): List<Track> {
         val cols = ArrayList(
             listOf(
@@ -86,6 +149,7 @@ object MusicLibrary {
         if (Build.VERSION.SDK_INT >= 29) cols.add(MediaStore.Audio.Media.RELATIVE_PATH)
         if (Build.VERSION.SDK_INT >= 30) cols.add(MediaStore.Audio.Media.GENRE)
         val out = ArrayList<Track>()
+        val paths = HashSet<String>()
         val base = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         ctx.contentResolver.query(
             base, cols.toTypedArray(), "${MediaStore.Audio.Media.IS_MUSIC} != 0", null,
@@ -108,6 +172,7 @@ object MusicLibrary {
                 val artist = c.getString(iArtist)?.takeUnless { it.isBlank() || it == "<unknown>" } ?: "Unknown artist"
                 val album = c.getString(iAlbum)?.takeUnless { it.isBlank() } ?: "Unknown album"
                 val data = if (iData >= 0) c.getString(iData) else null
+                if (!data.isNullOrBlank()) paths.add(data)
                 val rel = if (iRel >= 0) c.getString(iRel) else null
                 val folder = when {
                     !rel.isNullOrBlank() -> rel.trimEnd('/').substringAfterLast('/')
@@ -132,6 +197,7 @@ object MusicLibrary {
                 )
             }
         }
+        knownPaths = paths
         return out
     }
 

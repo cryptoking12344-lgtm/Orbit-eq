@@ -12,4 +12,8 @@ for spec in "Neon Nights|Aurora Lane|ff7c3aed" "Neon Nights|Aurora Lane|ff7c3aed
     -metadata title="Track $i" -metadata artist="$artist" -metadata album="$album" -metadata track="$i" -metadata genre="Electronic" \
     "testmusic/track$i.mp3"
 done
-ls -la testmusic
+# one extra song pushed later without indexing, to test the Recently added refresh button
+mkdir -p testfresh
+ffmpeg -loglevel error -y -f lavfi -i "sine=frequency=880:duration=30" -c:a libmp3lame -b:a 128k -id3v2_version 3 \
+  -metadata title="Fresh Drop" -metadata artist="New Arrivals" -metadata album="Just Added" testfresh/fresh_drop.mp3
+ls -la testmusic testfresh

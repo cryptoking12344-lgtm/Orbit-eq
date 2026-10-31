@@ -60,6 +60,14 @@ ui tap text Midnight; sleep 5; shot 19_midnight_library
 ui tap id nav_eq; sleep 3; shot 20_midnight_eq
 adb shell am start -n com.ck.orbiteq/.widget.WidgetConfigActivity --ei appWidgetId 999; sleep 4; shot 21_widget_styles
 adb shell input keyevent BACK; sleep 1
+# Recently added + refresh: copy a new song in WITHOUT telling Android, then press refresh
+ui tap id nav_library; sleep 3
+adb push testfresh/fresh_drop.mp3 /sdcard/Download/fresh_drop.mp3
+for k in 1 2 3; do adb shell input swipe 900 390 150 390 250; done; sleep 1
+ui tap text "Recently added"; sleep 3; shot 22_recently_added_before
+ui tap id btnLibRefresh; sleep 1; shot 23_refresh_scanning
+sleep 6; shot 24_recently_added_after
+ui tap text "Recently played"; sleep 2; shot 25_recently_played
 adb shell dumpsys media_session | grep -A3 -i "orbit" > media_session.txt || true
 
 adb logcat -d > logcat.txt

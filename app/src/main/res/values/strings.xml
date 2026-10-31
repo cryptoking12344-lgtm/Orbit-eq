@@ -132,7 +132,13 @@
     <string name="lib_folders">Folders</string>
     <string name="lib_playlists">Playlists</string>
     <string name="lib_liked">Liked</string>
-    <string name="lib_recent">Recent</string>
+    <string name="lib_recent">Recently played</string>
+    <string name="lib_added">Recently added</string>
+    <string name="lib_added_header">Newest first · %s</string>
+    <string name="lib_refresh">Look for new songs</string>
+    <string name="lib_scanning">Looking for new songs…</string>
+    <string name="lib_up_to_date">No new songs. Your library is up to date</string>
+    <string name="lib_no_added">New songs on your phone show up here</string>
     <string name="lib_allow">Allow access</string>
     <string name="lib_need_permission">Orbit needs permission to read the music on your phone. It only reads audio files.</string>
     <string name="lib_loading">Reading your music…</string>
@@ -182,4 +188,8 @@
     <string name="widget_style_sub">Pick a look. You can change it later by long-pressing the widget.</string>
     <string name="widget_style_cd">%1$s style</string>
     <string name="youtube">YouTube</string>
+    <plurals name="lib_new_found">
+        <item quantity="one">1 new song added</item>
+        <item quantity="other">%d new songs added</item>
+    </plurals>
 </resources>

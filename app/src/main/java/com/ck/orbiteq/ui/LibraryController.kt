@@ -39,10 +39,14 @@ class LibraryController(
         const val PLAYLISTS = 5
         const val LIKED = 6
         const val RECENT = 7
+        const val ADDED = 8
         private val TAB_NAMES = intArrayOf(
             R.string.lib_songs, R.string.lib_albums, R.string.lib_artists, R.string.lib_genres,
             R.string.lib_folders, R.string.lib_playlists, R.string.lib_liked, R.string.lib_recent,
+            R.string.lib_added,
         )
+        /** How many of the newest songs the Recently added tab shows. */
+        private const val ADDED_MAX = 300
     }
 
     private val tabs: ChipGroup = root.findViewById(R.id.chipsLibTabs)
@@ -56,6 +60,10 @@ class LibraryController(
     private val message: View = root.findViewById(R.id.libMessage)
     private val messageText: TextView = root.findViewById(R.id.txtLibMessage)
     private val allowBtn: MaterialButton = root.findViewById(R.id.btnLibAllow)
+    private val addedBar: View = root.findViewById(R.id.libAddedBar)
+    private val addedText: TextView = root.findViewById(R.id.txtLibAdded)
+    private val scanProgress: View = root.findViewById(R.id.progLibScan)
+    private val refreshBtn: MaterialButton = root.findViewById(R.id.btnLibRefresh)
 
     private var tab = SONGS
     private var detail: Group? = null
@@ -105,6 +113,7 @@ class LibraryController(
             detail?.tracks?.let { if (it.isNotEmpty()) PlayQueue.playList(act, it, 0, true) }
         }
         allowBtn.setOnClickListener { askPermission() }
+        refreshBtn.setOnClickListener { syncNewSongs() }
         searchEdit.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -190,6 +199,7 @@ class LibraryController(
             return
         }
         message.visibility = View.GONE
+        addedBar.visibility = if (tab == ADDED && detail == null) View.VISIBLE else View.GONE
 
         val d = detail
         if (d != null) {
@@ -246,6 +256,32 @@ class LibraryController(
                 adapter.showSongs(l)
                 emptyHint(l.isEmpty(), R.string.lib_no_recent)
             }
+            ADDED -> {
+                showList()
+                val newest = MusicLibrary.songs.sortedByDescending { it.dateAdded }.take(ADDED_MAX)
+                val l = newest.filter { matches(it) }
+                adapter.showSongs(l)
+                addedText.text = act.getString(R.string.lib_added_header, MusicLibrary.songsLabel(newest.size))
+                emptyHint(l.isEmpty(), if (query.isEmpty()) R.string.lib_no_added else R.string.lib_no_results)
+            }
+        }
+    }
+
+    /** Refresh button: asks Android to index new audio files, reloads, and says how many arrived. */
+    private fun syncNewSongs() {
+        if (MusicLibrary.loading || scanProgress.visibility == View.VISIBLE) return
+        scanProgress.visibility = View.VISIBLE
+        refreshBtn.isEnabled = false
+        refreshBtn.animate().rotationBy(360f).setDuration(600).start()
+        Toast.makeText(act, R.string.lib_scanning, Toast.LENGTH_SHORT).show()
+        MusicLibrary.rescan(act) { added ->
+            scanProgress.visibility = View.GONE
+            refreshBtn.isEnabled = true
+            val msg = if (added > 0) act.resources.getQuantityString(R.plurals.lib_new_found, added, added)
+            else act.getString(R.string.lib_up_to_date)
+            Toast.makeText(act, msg, Toast.LENGTH_SHORT).show()
+            if (tab == ADDED) list.scrollToPosition(0)
+            refresh()
         }
     }
 
