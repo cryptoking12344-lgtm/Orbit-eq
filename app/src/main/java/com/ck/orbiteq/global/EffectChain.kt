@@ -71,6 +71,8 @@ class EffectChain(val session: Int) {
     val worksAtAll: Boolean get() = dp != null || virt != null || rev != null
 
     fun apply(s: EqSettings, extraGainDb: Float = 0f) {
+        last = s; lastGain = extraGainDb
+        if (bypassed) return
         dp?.let { d ->
             try {
                 for (i in 0 until EqSettings.BANDS) {
@@ -107,6 +109,25 @@ class EffectChain(val session: Int) {
                 }
             } catch (_: Throwable) {
             }
+        }
+    }
+
+    /** Paused = all effects switched off (used while Orbit's own player is playing). */
+    var bypassed = false
+        private set
+    private var last: EqSettings? = null
+    private var lastGain = 0f
+
+    fun setBypass(b: Boolean) {
+        if (b == bypassed) return
+        bypassed = b
+        if (b) {
+            try { dp?.setEnabled(false) } catch (_: Throwable) {}
+            try { virt?.setEnabled(false) } catch (_: Throwable) {}
+            try { rev?.setEnabled(false) } catch (_: Throwable) {}
+        } else {
+            try { dp?.setEnabled(true) } catch (_: Throwable) {}
+            last?.let { apply(it, lastGain) }
         }
     }
 

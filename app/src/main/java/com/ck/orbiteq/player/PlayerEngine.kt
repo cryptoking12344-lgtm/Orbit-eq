@@ -24,7 +24,7 @@ import kotlin.math.max
 
 /**
  * Decodes a song with MediaCodec, runs it through our own DSP chain
- * (EQ, bass, 8D, surround, reverb, limiter) and plays it with AudioTrack.
+ * (EQ, bass, Theater / 360, amp, limiter) and plays it with AudioTrack.
  */
 object PlayerEngine {
 

@@ -7,23 +7,14 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Single source of truth for the current sound. Both the system-wide
- * service and the 8D player read from here. Call setters on the main thread.
+ * service and the Orbit player read from here. Call setters on the main thread.
  */
 object AudioState {
-
-    class EightD(
-        val enabled: Boolean = false,
-        val speedHz: Float = 0.12f,  // circles per second
-        val depth: Float = 0.85f,    // 0..1
-    )
 
     @Volatile var eq: EqSettings = EqSettings()
         private set
 
-    @Volatile var eightD: EightD = EightD()
-        private set
-
-    /** Virtual 7.1.4 cinema for headphones (8D Player only). */
+    /** Virtual 7.1.4 cinema for headphones (Orbit player only). */
     class Theater(
         val enabled: Boolean = false,
         val room: Int = 1,
@@ -115,11 +106,8 @@ object AudioState {
             if (raw != null) eq = EqSettings.fromJson(JSONObject(raw))
         } catch (_: Exception) {
         }
-        eightD = EightD(
-            p.getBoolean("8d_on", false),
-            p.getFloat("8d_speed", 0.12f).coerceIn(0.03f, 0.4f),
-            p.getFloat("8d_depth", 0.85f).coerceIn(0f, 1f),
-        )
+        // the old 8D effect is gone; drop its saved settings
+        if (p.contains("8d_on")) p.edit().remove("8d_on").remove("8d_speed").remove("8d_depth").apply()
         theater = Theater(
             p.getBoolean("th_on", false),
             p.getInt("th_room", 1).coerceIn(0, 2),
@@ -155,17 +143,6 @@ object AudioState {
         eq = s
         version++
         if (persist) prefs?.edit()?.putString("eq", s.toJson().toString())?.apply()
-        notifyListeners()
-    }
-
-    fun setEightD(e: EightD) {
-        eightD = e
-        version++
-        prefs?.edit()
-            ?.putBoolean("8d_on", e.enabled)
-            ?.putFloat("8d_speed", e.speedHz)
-            ?.putFloat("8d_depth", e.depth)
-            ?.apply()
         notifyListeners()
     }
 

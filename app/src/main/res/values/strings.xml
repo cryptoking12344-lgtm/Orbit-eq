@@ -21,23 +21,19 @@
     <string name="lbl_spatial">3D Surround (Atmos-style) · %1$d%%</string>
     <string name="lbl_loud">Loudness · +%1$.1f dB</string>
     <string name="lbl_preamp">Preamp · %1$+.1f dB</string>
-    <string name="status_off">Turn on System-wide to apply this sound to Spotify, YouTube and other apps. The 8D Player tab always uses it.</string>
+    <string name="status_off">Turn on System-wide to apply this sound to Spotify, YouTube and other apps. The Orbit player always uses it.</string>
     <string name="status_ok">Active on all apps · %1$d app session(s) linked</string>
     <string name="status_partial">Active, but this phone blocks: %1$s</string>
-    <string name="status_failed">This phone blocked system-wide effects. The 8D Player still works.</string>
+    <string name="status_failed">This phone blocked system-wide effects. The Orbit player still works.</string>
 
     <string name="no_song">No song loaded</string>
-    <string name="open_hint">Open a song from your phone to hear 8D and surround</string>
+    <string name="open_hint">Open a song from your phone to hear Theater and 360 sound</string>
     <string name="now_playing">Playing with Orbit effects</string>
     <string name="paused">Paused</string>
     <string name="open">Open</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
-    <string name="eight_d">8D Audio</string>
-    <string name="eight_d_sub">Sound circles around your head. Use headphones.</string>
-    <string name="lbl_8d_speed">Rotation · one circle every %1$.1f s</string>
-    <string name="lbl_8d_depth">Effect strength · %1$d%%</string>
     <string name="player_hint">The player also uses your Equalizer and bass settings. Turn System-wide off while using it so the EQ isn\'t applied twice.</string>
 
     <string name="headphones">Headphones</string>
@@ -76,7 +72,6 @@
     <string name="lbl_sub">Sub punch · %1$d%%</string>
     <string name="xm4_fix">Sony WH-1000XM4 tuning</string>
     <string name="xm4_fix_sub">Evens out the XM4\'s sound for a natural cinema</string>
-    <string name="eight_d_off_theater">Off while Theater is on</string>
 
     <string name="share_label">Play in Orbit EQ</string>
     <string name="yt_title">Play from YouTube</string>

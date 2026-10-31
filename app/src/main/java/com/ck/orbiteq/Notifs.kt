@@ -16,7 +16,7 @@ object Notifs {
             NotificationChannel(CH_EFFECTS, "System-wide EQ", NotificationManager.IMPORTANCE_LOW)
         )
         nm.createNotificationChannel(
-            NotificationChannel(CH_PLAYER, "8D Player", NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(CH_PLAYER, "Orbit player", NotificationManager.IMPORTANCE_LOW)
         )
     }
 

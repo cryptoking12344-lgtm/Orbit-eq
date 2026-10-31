@@ -62,6 +62,28 @@ class GlobalEffectsService : Service() {
     private var audioManager: AudioManager? = null
     private val stateListener: () -> Unit = { applyAll() }
 
+    /**
+     * The Orbit player already applies the EQ, Theater / 360 and amp itself. While it plays,
+     * the system-wide effects step aside so the sound isn't processed twice (double EQ plus
+     * the phone's 3D surround on top of Theater / 360 sounds smeared, like 8D).
+     */
+    private var orbitPlaying = false
+    private val resumeGlobal = Runnable { setBypass(false) }
+    private val playerListener = object : com.ck.orbiteq.player.PlayerEngine.Listener {
+        override fun onPlaybackState(state: com.ck.orbiteq.player.PlayerEngine.State) {
+            if (state.playing == orbitPlaying) return
+            orbitPlaying = state.playing
+            main.removeCallbacks(resumeGlobal)
+            // switch off at once; switch back on after a moment so track changes don't flicker
+            if (state.playing) setBypass(true) else main.postDelayed(resumeGlobal, 700)
+        }
+        override fun onSpectrum(bands: FloatArray) {}
+    }
+
+    private fun setBypass(b: Boolean) {
+        for (c in chains.values) c.setBypass(b)
+    }
+
     private val sessionReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val session = intent.getIntExtra(AudioEffect.EXTRA_AUDIO_SESSION, -1)
@@ -111,6 +133,9 @@ class GlobalEffectsService : Service() {
         ContextCompat.registerReceiver(this, sessionReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
         audioManager?.registerAudioDeviceCallback(deviceCallback, main)
         AudioState.addListener(stateListener)
+        com.ck.orbiteq.player.PlayerEngine.addListener(playerListener)
+        orbitPlaying = com.ck.orbiteq.player.PlayerEngine.state.playing
+        setBypass(orbitPlaying)
         refreshTile()
     }
 
@@ -132,6 +157,8 @@ class GlobalEffectsService : Service() {
         status = ""
         if (wasRunning) {
             AudioState.removeListener(stateListener)
+            com.ck.orbiteq.player.PlayerEngine.removeListener(playerListener)
+            main.removeCallbacks(resumeGlobal)
             try {
                 unregisterReceiver(sessionReceiver)
             } catch (_: Exception) {
@@ -149,6 +176,7 @@ class GlobalEffectsService : Service() {
         val chain = EffectChain(session)
         if (!chain.worksAtAll && session != 0) return
         chain.apply(AudioState.eq, ampGain())
+        chain.setBypass(orbitPlaying)
         chains[session] = chain
         updateStatus()
     }
