@@ -42,6 +42,11 @@ object Appearance {
     fun setTheme(ctx: Context, t: Int) = prefs(ctx).edit().putInt("theme", t).remove("accent").remove("viz").apply()
     fun setAccent(ctx: Context, a: Int) = prefs(ctx).edit().putInt("accent", a).apply()
     fun setVizStyle(ctx: Context, v: Int) = prefs(ctx).edit().putInt("viz", v).apply()
+    const val WHEEL_STRIP = 0
+    const val WHEEL_DIAL = 1
+    const val WHEEL_OFF = 2
+    fun wheelStyle(ctx: Context) = prefs(ctx).getInt("wheel", WHEEL_STRIP).coerceIn(0, 2)
+    fun setWheelStyle(ctx: Context, w: Int) = prefs(ctx).edit().putInt("wheel", w).apply()
     fun setFlowEffect(ctx: Context, f: Int) = prefs(ctx).edit().putInt("flow2", f).apply()
 
     /** The Retro pixel font draws small, so Retro gets 30 % larger text. Call from attachBaseContext. */

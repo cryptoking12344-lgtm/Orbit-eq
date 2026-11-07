@@ -187,4 +187,7 @@
         <item quantity="one">1 new song added</item>
         <item quantity="other">%d new songs added</item>
     </plurals>
+    <string name="wheel_strip">Thumb wheel</string>
+    <string name="wheel_dial">Jog dial</string>
+    <string name="wheel_off">No wheel</string>
 </resources>

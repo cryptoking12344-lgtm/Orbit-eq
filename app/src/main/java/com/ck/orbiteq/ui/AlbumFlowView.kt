@@ -152,13 +152,63 @@ class AlbumFlowView @JvmOverloads constructor(
     private fun notifySelection() {
         val s = selected
         if (s != lastSelected && albums.isNotEmpty()) {
-            if (lastSelected >= 0 && mode != Mode.IDLE && abs(vel) < 12f) {
-                // a soft click per album, like a wheel detent (skipped while racing)
+            val now = System.nanoTime()
+            if (lastSelected >= 0 && mode != Mode.IDLE && (abs(vel) < 12f || wheelHeld) && now - lastTickNs > 28_000_000L) {
+                // a soft click per album, like a wheel detent (skipped while racing, but always on the wheel)
                 performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                lastTickNs = now
             }
             lastSelected = s
             onSelected?.invoke(s)
         }
+    }
+
+    private var lastTickNs = 0L
+
+    // ------------------------------------------------------------------ jog wheel input
+
+    /** Called every frame with the scroll position, so a wheel can turn with the wall. */
+    var onMoved: ((Float) -> Unit)? = null
+    private var wheelHeld = false
+    private var wheelRaw = 0f
+
+    fun wheelStart() {
+        if (albums.isEmpty() || isOpen) return
+        wheelHeld = true
+        mode = Mode.DRAG
+        wheelRaw = position
+        vel = 0f
+        lastDragPos = position; lastDragNs = System.nanoTime()
+        startLoop()
+    }
+
+    /** Move by [albums] (fractional) from the wheel. */
+    fun wheelBy(albums: Float) {
+        if (!wheelHeld) return
+        wheelRaw += albums
+        val mx = maxPos()
+        val p = when {
+            wheelRaw < 0f -> -rubber(-wheelRaw)
+            wheelRaw > mx -> mx + rubber(wheelRaw - mx)
+            else -> wheelRaw
+        }
+        val now = System.nanoTime()
+        val dt = (now - lastDragNs) / 1e9f
+        if (dt > 0.004f) {
+            vel += ((p - lastDragPos) / dt - vel) * 0.5f
+            lastDragPos = p; lastDragNs = now
+        }
+        position = p
+        notifySelection()
+        startLoop()
+        invalidate()
+    }
+
+    /** Wheel let go at [v] albums/second: same momentum as a swipe. */
+    fun wheelRelease(v: Float) {
+        if (!wheelHeld) return
+        wheelHeld = false
+        release(v)
     }
 
     // ------------------------------------------------------------------ physics
@@ -245,6 +295,7 @@ class AlbumFlowView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        onMoved?.invoke(position)
         if (albums.isEmpty()) return
         val card = cardPx()
         val cx = width / 2f
