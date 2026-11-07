@@ -194,7 +194,6 @@
     <string name="delete_song">Delete from phone</string>
     <string name="delete_confirm_title">Delete this song?</string>
     <string name="delete_confirm_msg">“%1$s” will be removed from your phone. This can\'t be undone.</string>
-    <string name="delete">Delete</string>
     <string name="deleted_song">Deleted “%1$s”</string>
     <string name="delete_failed">Couldn\'t delete this song</string>
     <string name="delete_need_storage">Allow storage access, then try again</string>
