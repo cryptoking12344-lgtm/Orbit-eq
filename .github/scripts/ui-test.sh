@@ -81,7 +81,7 @@ ui tap id editLibSearch; sleep 1; adb shell input text "fresh"; sleep 2; shot 26
 adb shell input keyevent 4; sleep 1
 # delete a song from the phone: song menu -> Delete -> Android's own confirmation
 ui tap id songMore 0.5 0.5 0; sleep 2; shot 27_song_menu
-ui tap text "Delete from phone"; sleep 3; shot 28_delete_prompt
+ui tap text "Delete"; sleep 3; shot 28_delete_prompt
 ui tap text "Allow"; sleep 4; shot 29_after_delete
 adb shell input keyevent 4; sleep 1
 # Equalizer: Clear Audio+ switch and Clear Bass slider
