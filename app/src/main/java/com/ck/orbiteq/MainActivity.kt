@@ -94,6 +94,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private lateinit var chipsPresets: ChipGroup
     private lateinit var chipsReverb: ChipGroup
     private lateinit var sliderBass: Slider
+    private lateinit var switchClearAudio: MaterialSwitch
     private lateinit var sliderSpatial: Slider
     private lateinit var sliderLoud: Slider
     private lateinit var sliderPreamp: Slider
@@ -194,6 +195,79 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
             if (uri != null) loadSong(uri)
         }
 
+    // ------------------------------------------------------------------ delete a song from the phone
+
+    private var pendingDelete: Track? = null
+
+    /** Android's own "Allow Orbit to delete this song?" prompt (Android 10+). */
+    private val deleteLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { res ->
+            val t = pendingDelete ?: return@registerForActivityResult
+            pendingDelete = null
+            if (res.resultCode != RESULT_OK) return@registerForActivityResult
+            if (Build.VERSION.SDK_INT == 29) {
+                // Android 10 only grants access; the delete must be repeated
+                try { contentResolver.delete(songUri(t), null, null) } catch (_: Exception) { toast(getString(R.string.delete_failed)); return@registerForActivityResult }
+            }
+            afterDelete(t)
+        }
+
+    private fun songUri(t: Track) =
+        android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, t.id)
+
+    private fun deleteSong(t: Track) {
+        if (t.id <= 0) return
+        if (Build.VERSION.SDK_INT >= 30) {
+            // the system shows its own confirmation, so no second dialog here
+            try {
+                val pi = android.provider.MediaStore.createDeleteRequest(contentResolver, listOf(songUri(t)))
+                pendingDelete = t
+                deleteLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(pi.intentSender).build())
+            } catch (_: Exception) {
+                toast(getString(R.string.delete_failed))
+            }
+            return
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.delete_confirm_title)
+            .setMessage(getString(R.string.delete_confirm_msg, t.title))
+            .setPositiveButton(R.string.delete) { _, _ -> deleteOld(t) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** Android 9 / 10. */
+    private fun deleteOld(t: Track) {
+        if (Build.VERSION.SDK_INT < 29 &&
+            checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE), 77)
+            toast(getString(R.string.delete_need_storage))
+            return
+        }
+        try {
+            if (contentResolver.delete(songUri(t), null, null) > 0) afterDelete(t)
+            else toast(getString(R.string.delete_failed))
+        } catch (e: SecurityException) {
+            val rse = if (Build.VERSION.SDK_INT >= 29) e as? android.app.RecoverableSecurityException else null
+            if (rse != null) {
+                pendingDelete = t
+                deleteLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(rse.userAction.actionIntent.intentSender).build())
+            } else {
+                toast(getString(R.string.delete_failed))
+            }
+        } catch (_: Exception) {
+            toast(getString(R.string.delete_failed))
+        }
+    }
+
+    private fun afterDelete(t: Track) {
+        // the song that was playing is gone: move on
+        if (PlayQueue.current?.id == t.id && !PlayQueue.next()) PlayerEngine.stop()
+        MusicLibrary.load(this, force = true)
+        toast(getString(R.string.deleted_song, t.title))
+    }
+
     private val notifPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> startGlobal() }
 
@@ -235,7 +309,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         setupProfiles()
         setupYouTube()
         setupMiniPlayer()
-        library = LibraryController(this, findViewById(R.id.pageLibrary)) { askMusicPermission() }
+        library = LibraryController(this, findViewById(R.id.pageLibrary), { askMusicPermission() }, { deleteSong(it) })
         findViewById<MaterialButton>(R.id.btnAppearance).setOnClickListener { Sheets.appearance(this) }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = goBack()
@@ -327,6 +401,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         chipsPresets = findViewById(R.id.chipsPresets)
         chipsReverb = findViewById(R.id.chipsReverb)
         sliderBass = findViewById(R.id.sliderBass)
+        switchClearAudio = findViewById(R.id.switchClearAudio)
         sliderSpatial = findViewById(R.id.sliderSpatial)
         sliderLoud = findViewById(R.id.sliderLoud)
         sliderPreamp = findViewById(R.id.sliderPreamp)
@@ -480,7 +555,11 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         findViewById<MaterialButton>(R.id.btnReset).setOnClickListener { AudioState.setEq(EqSettings()) }
         findViewById<MaterialButton>(R.id.btnSavePreset).setOnClickListener { Sheets.savePreset(this) }
 
-        bindSlider(sliderBass) { v, done -> AudioState.setEq(AudioState.eq.copy(bass = v), done) }
+        bindSlider(sliderBass) { v, done -> AudioState.setEq(AudioState.eq.copy(bass = v / 10f), done) }
+        switchClearAudio.setOnCheckedChangeListener { _, on ->
+            if (AudioState.eq.clearAudio != on) AudioState.setEq(AudioState.eq.copy(clearAudio = on))
+        }
+        findViewById<View>(R.id.rowClearAudio).setOnClickListener { switchClearAudio.toggle() }
         bindSlider(sliderSpatial) { v, done -> AudioState.setEq(AudioState.eq.copy(spatial = v), done) }
         bindSlider(sliderLoud) { v, done -> AudioState.setEq(AudioState.eq.copy(loudness = v), done) }
         bindSlider(sliderPreamp) { v, done -> AudioState.setEq(AudioState.eq.copy(preamp = v), done) }
@@ -552,11 +631,13 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private fun refreshSound() {
         val s = AudioState.eq
         eqCurve.setGains(s.gains)
-        setSlider(sliderBass, s.bass)
+        val cb = (s.bass * 10f).roundToInt()
+        setSlider(sliderBass, cb.toFloat())
+        if (switchClearAudio.isChecked != s.clearAudio) switchClearAudio.isChecked = s.clearAudio
         setSlider(sliderSpatial, s.spatial)
         setSlider(sliderLoud, s.loudness)
         setSlider(sliderPreamp, s.preamp)
-        lblBass.text = getString(R.string.lbl_bass, (s.bass * 100).roundToInt())
+        lblBass.text = getString(R.string.lbl_bass, if (cb > 0) "+$cb" else if (cb < 0) "−${-cb}" else "0")
         lblSpatial.text = getString(R.string.lbl_spatial, (s.spatial * 100).roundToInt())
         lblLoud.text = getString(R.string.lbl_loud, s.loudness)
         lblPreamp.text = getString(R.string.lbl_preamp, s.preamp)

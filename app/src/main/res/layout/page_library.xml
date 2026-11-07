@@ -5,6 +5,29 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!-- search: always on top, filters whichever tab is open -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/libSearchBox"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="6dp"
+        android:hint="@string/lib_search_hint"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/ic_search">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editLibSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <!-- tabs -->
     <HorizontalScrollView
         android:id="@+id/libTabsScroll"
@@ -22,29 +45,6 @@
             app:singleLine="true"
             app:singleSelection="true" />
     </HorizontalScrollView>
-
-    <!-- search -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/libSearchBox"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="4dp"
-        android:hint="@string/lib_search_hint"
-        android:visibility="gone"
-        app:endIconMode="clear_text"
-        app:startIconDrawable="@drawable/ic_search">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editLibSearch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:imeOptions="actionSearch"
-            android:inputType="text"
-            android:singleLine="true" />
-    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Recently added: count + refresh (sync new audio) -->
     <LinearLayout

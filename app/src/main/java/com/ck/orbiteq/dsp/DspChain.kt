@@ -35,10 +35,9 @@ class DspChain(sampleRate: Int) {
     private val fs = sampleRate.toDouble()
     private val eqL = Array(EqSettings.BANDS) { Biquad() }
     private val eqR = Array(EqSettings.BANDS) { Biquad() }
-    private val bassL = Biquad()
-    private val bassR = Biquad()
+    private val clearBass = ClearBass(sampleRate)
+    private val clearAudio = ClearAudio(sampleRate)
     private var eqOn = false
-    private var bassOn = false
     private var pre = 1f
     private var loud = 1f
 
@@ -72,11 +71,11 @@ class DspChain(sampleRate: Int) {
         }
         eqOn = s.gains.any { abs(it) > 0.05f }
 
-        val bassDb = s.bass * 10.0
-        bassL.setLowShelf(fs, 100.0, bassDb)
-        bassR.setLowShelf(fs, 100.0, bassDb)
-        bassOn = s.bass > 0.01f
-        maxBoost = max(maxBoost, s.bass * 10f)
+        clearBass.configure(s.bass)
+        // Clear Bass protects itself, so it needs less up-front headroom than a plain boost
+        maxBoost = max(maxBoost, s.bass * 6f)
+        if (s.clearAudio && !clearAudio.enabled) clearAudio.reset()
+        clearAudio.enabled = s.clearAudio
 
         // Leave some automatic headroom when boosting so the limiter works less.
         pre = dbToLin(s.preamp - maxBoost * 0.5f)
@@ -90,8 +89,8 @@ class DspChain(sampleRate: Int) {
     fun reset() {
         eqL.forEach { it.reset() }
         eqR.forEach { it.reset() }
-        bassL.reset()
-        bassR.reset()
+        clearBass.reset()
+        clearAudio.reset()
         spatial.reset()
         reverb.reset()
         theater.reset()
@@ -102,7 +101,7 @@ class DspChain(sampleRate: Int) {
 
     fun process(buf: FloatArray, frames: Int) {
         val g = pre
-        if (eqOn || bassOn || g != 1f) {
+        if (eqOn || g != 1f) {
             for (n in 0 until frames) {
                 var l = buf[2 * n] * g
                 var r = buf[2 * n + 1] * g
@@ -112,14 +111,12 @@ class DspChain(sampleRate: Int) {
                         r = eqR[b].process(r)
                     }
                 }
-                if (bassOn) {
-                    l = bassL.process(l)
-                    r = bassR.process(r)
-                }
                 buf[2 * n] = l
                 buf[2 * n + 1] = r
             }
         }
+        clearBass.process(buf, frames)
+        clearAudio.process(buf, frames)
         when {
             // Theater / 360 replace the simple surround and reverb.
             theaterOn -> theater.process(buf, frames)

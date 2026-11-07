@@ -159,6 +159,43 @@
                                 app:icon="@drawable/ic_save" />
                         </LinearLayout>
 
+                        <!-- Clear Audio+ -->
+                        <LinearLayout
+                            android:id="@+id/rowClearAudio"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/clear_audio"
+                                    android:textColor="?attr/oText"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    style="@style/Label"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/clear_audio_sub" />
+                            </LinearLayout>
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/switchClearAudio"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content" />
+                        </LinearLayout>
+
                         <com.ck.orbiteq.ui.EqCurveView
                             android:id="@+id/eqCurve"
                             android:layout_width="match_parent"
@@ -208,9 +245,10 @@
                             android:id="@+id/sliderBass"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:stepSize="1"
                             android:value="0"
-                            android:valueFrom="0"
-                            android:valueTo="1"
+                            android:valueFrom="-10"
+                            android:valueTo="10"
                             app:labelBehavior="gone" />
 
                         <TextView

@@ -27,7 +27,7 @@ ui tap text Wheel; sleep 2; shot 05_wheel
 ui tap text Stack; sleep 2; shot 06_stack
 ui tap text Glide; sleep 2; shot 07_glide
 ui tap text "Cover Flow"; sleep 2; shot 07b_coverflow
-ui tap text "N8 Flow"; sleep 1
+ui tap text "Flow"; sleep 1
 # hard flick: grab the wall mid-flight (no settle delay)
 adb shell input swipe 950 900 150 900 60; adb exec-out screencap -p > shots/07c_n8_fast_motion.png; sleep 3; shot 07d_n8_after_fling
 adb shell input swipe 300 900 700 900 900; sleep 2; shot 07e_n8_slow_drag
@@ -68,11 +68,24 @@ adb shell input keyevent BACK; sleep 1
 # Recently added + refresh: copy a new song in WITHOUT telling Android, then press refresh
 ui tap id nav_library; sleep 3
 adb push testfresh/fresh_drop.mp3 /sdcard/Download/fresh_drop.mp3
-for k in 1 2 3; do adb shell input swipe 900 390 150 390 250; done; sleep 1
+read TX TY < <(python3 .github/scripts/ui.py point id chipsLibTabs 0.5 0.5 | tail -1)
+for k in 1 2 3; do adb shell input swipe 900 $TY 150 $TY 250; done; sleep 1
 ui tap text "Recently added"; sleep 3; shot 22_recently_added_before
 ui tap id btnLibRefresh; sleep 1; shot 23_refresh_scanning
 sleep 6; shot 24_recently_added_after
 ui tap text "Recently played"; sleep 2; shot 25_recently_played
+# search bar on top: type a query, it filters the open tab
+for k in 1 2 3; do adb shell input swipe 150 $TY 900 $TY 250; done; sleep 1
+ui tap text Songs; sleep 2
+ui tap id editLibSearch; sleep 1; adb shell input text "fresh"; sleep 2; shot 26_search_on_top
+adb shell input keyevent 4; sleep 1
+# delete a song from the phone: song menu -> Delete -> Android's own confirmation
+ui tap id songMore 0.5 0.5 0; sleep 2; shot 27_song_menu
+ui tap text "Delete from phone"; sleep 3; shot 28_delete_prompt
+ui tap text "Allow"; sleep 4; shot 29_after_delete
+adb shell input keyevent 4; sleep 1
+# Equalizer: Clear Audio+ switch and Clear Bass slider
+ui tap id nav_eq; sleep 3; ui tap id switchClearAudio; sleep 1; shot 30_clear_audio_on
 adb shell dumpsys media_session | grep -A3 -i "orbit" > media_session.txt || true
 
 adb logcat -d > logcat.txt

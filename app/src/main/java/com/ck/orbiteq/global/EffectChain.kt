@@ -78,9 +78,10 @@ class EffectChain(val session: Int) {
                 for (i in 0 until EqSettings.BANDS) {
                     var g = s.gains[i]
                     when (i) {
-                        0 -> g += s.bass * 9f
-                        1 -> g += s.bass * 7f
-                        2 -> g += s.bass * 3.5f
+                        // Clear Bass, as close as the phone's EQ allows (deep bass only)
+                        0 -> g += s.bass * 10f
+                        1 -> g += s.bass * 8f
+                        2 -> g += s.bass * 2.5f
                     }
                     d.setPreEqBandAllChannelsTo(i, DynamicsProcessing.EqBand(true, CUTOFFS[i], g))
                 }

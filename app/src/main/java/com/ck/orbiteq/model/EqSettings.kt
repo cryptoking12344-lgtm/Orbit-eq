@@ -7,10 +7,11 @@ import org.json.JSONObject
 class EqSettings(
     val gains: FloatArray = FloatArray(BANDS),
     val preamp: Float = 0f,     // dB, -12..+6
-    val bass: Float = 0f,       // 0..1
+    val bass: Float = 0f,       // Clear Bass level -1..+1 (slider -10..+10); old saves (0..1) map straight over
     val spatial: Float = 0f,    // 0..1  (3D surround / Atmos-style)
     val reverb: Int = 0,        // index into REVERB_NAMES
     val loudness: Float = 0f,   // dB, 0..8
+    val clearAudio: Boolean = false,  // Clear Audio+ (Orbit player only)
 ) {
     fun copy(
         gains: FloatArray = this.gains.copyOf(),
@@ -19,7 +20,8 @@ class EqSettings(
         spatial: Float = this.spatial,
         reverb: Int = this.reverb,
         loudness: Float = this.loudness,
-    ): EqSettings = EqSettings(gains, preamp, bass, spatial, reverb, loudness)
+        clearAudio: Boolean = this.clearAudio,
+    ): EqSettings = EqSettings(gains, preamp, bass, spatial, reverb, loudness, clearAudio)
 
     fun toJson(): JSONObject {
         val arr = JSONArray()
@@ -31,6 +33,7 @@ class EqSettings(
             .put("s", spatial.toDouble())
             .put("r", reverb)
             .put("l", loudness.toDouble())
+            .put("ca", clearAudio)
     }
 
     companion object {
@@ -49,10 +52,11 @@ class EqSettings(
             return EqSettings(
                 gains = g,
                 preamp = o.optDouble("p", 0.0).toFloat().coerceIn(-12f, 6f),
-                bass = o.optDouble("b", 0.0).toFloat().coerceIn(0f, 1f),
+                bass = o.optDouble("b", 0.0).toFloat().coerceIn(-1f, 1f),
                 spatial = o.optDouble("s", 0.0).toFloat().coerceIn(0f, 1f),
                 reverb = o.optInt("r", 0).coerceIn(0, REVERB_NAMES.size - 1),
                 loudness = o.optDouble("l", 0.0).toFloat().coerceIn(0f, 8f),
+                clearAudio = o.optBoolean("ca", false),
             )
         }
     }

@@ -29,6 +29,7 @@ class LibraryController(
     private val act: Activity,
     root: View,
     private val askPermission: () -> Unit,
+    private val deleteSong: (Track) -> Unit = {},
 ) {
     companion object {
         const val SONGS = 0
@@ -86,14 +87,6 @@ class LibraryController(
         list.adapter = adapter
 
         val inf = LayoutInflater.from(act)
-        val search = inf.inflate(R.layout.item_chip, tabs, false) as Chip
-        search.id = View.generateViewId()
-        search.text = act.getString(R.string.search)
-        search.isCheckable = false
-        search.chipIcon = act.getDrawable(R.drawable.ic_search)
-        search.isChipIconVisible = true
-        search.setOnClickListener { toggleSearch() }
-        tabs.addView(search)
         TAB_NAMES.forEachIndexed { i, res ->
             val chip = inf.inflate(R.layout.item_chip, tabs, false) as Chip
             chip.id = View.generateViewId()
@@ -119,7 +112,8 @@ class LibraryController(
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 query = s?.toString()?.trim().orEmpty()
-                refresh()
+                // the album wall can't be filtered: show matching songs instead
+                if (query.isNotEmpty() && tab == ALBUMS && detail == null) selectTab(SONGS) else refresh()
             }
         })
     }
@@ -150,7 +144,7 @@ class LibraryController(
     fun onBack(): Boolean {
         if (flow?.onBack() == true) return true
         if (detail != null) { closeDetail(); return true }
-        if (searchBox.visibility == View.VISIBLE) { toggleSearch(); return true }
+        if (query.isNotEmpty()) { clearSearch(); return true }
         return false
     }
 
@@ -161,15 +155,11 @@ class LibraryController(
         refresh()
     }
 
-    private fun toggleSearch() {
-        if (searchBox.visibility == View.VISIBLE) {
-            searchEdit.setText("")
-            searchBox.visibility = View.GONE
-        } else {
-            searchBox.visibility = View.VISIBLE
-            if (tab == ALBUMS) selectTab(SONGS)
-            searchEdit.requestFocus()
-        }
+    private fun clearSearch() {
+        searchEdit.setText("")
+        searchEdit.clearFocus()
+        (act.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager)
+            ?.hideSoftInputFromWindow(searchEdit.windowToken, 0)
     }
 
     private fun openGroup(g: Group) {
@@ -322,6 +312,7 @@ class LibraryController(
         m.menu.add(0, 4, 3, R.string.add_to_playlist)
         val d = detail
         if (d != null && d.key.startsWith("pl:")) m.menu.add(0, 5, 4, R.string.remove_from_playlist)
+        if (t.id > 0) m.menu.add(0, 6, 9, R.string.delete_song)
         m.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> { PlayQueue.playNext(t); toast(R.string.added_next) }
@@ -329,6 +320,7 @@ class LibraryController(
                 3 -> UserLibrary.toggleLike(t.id)
                 4 -> pickPlaylist(t)
                 5 -> d?.let { UserLibrary.removeFromPlaylist(it.name, t.id) }
+                6 -> deleteSong(t)
             }
             true
         }

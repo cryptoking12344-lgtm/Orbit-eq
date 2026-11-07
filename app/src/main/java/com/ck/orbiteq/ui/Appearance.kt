@@ -26,7 +26,7 @@ object Appearance {
     val ACCENT_COLORS = intArrayOf(0xFFA78BFA.toInt(), 0xFF22D3EE.toInt(), 0xFF5EEAD4.toInt(), 0xFFFBBF24.toInt(), 0xFFFB7185.toInt())
     private val ACCENT_STYLES = intArrayOf(R.style.Accent_Violet, R.style.Accent_Cyan, R.style.Accent_Mint, R.style.Accent_Amber, R.style.Accent_Rose)
     val VIZ_NAMES = arrayOf("Bars", "Peaks", "Wave")
-    val FLOW_NAMES = arrayOf("N8 Flow", "Cover Flow", "Wheel", "Stack", "Glide")
+    val FLOW_NAMES = arrayOf("Flow", "Cover Flow", "Wheel", "Stack", "Glide")
     /** FlowMath effect id for each entry of FLOW_NAMES. */
     val FLOW_IDS = intArrayOf(FlowMath.N8, FlowMath.FLOW, FlowMath.WHEEL, FlowMath.STACK, FlowMath.GLIDE)
 

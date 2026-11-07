@@ -17,7 +17,9 @@
     <string name="reset">Reset</string>
     <string name="effects">Effects</string>
     <string name="reverb">Reverb</string>
-    <string name="lbl_bass">Bass boost · %1$d%%</string>
+    <string name="lbl_bass">Clear Bass · %1$s</string>
+    <string name="clear_audio">Clear Audio+</string>
+    <string name="clear_audio_sub">Restores detail and sharpens notes. Orbit player only</string>
     <string name="lbl_spatial">3D Surround (Atmos-style) · %1$d%%</string>
     <string name="lbl_loud">Loudness · +%1$.1f dB</string>
     <string name="lbl_preamp">Preamp · %1$+.1f dB</string>
@@ -34,7 +36,7 @@
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="stop">Stop</string>
-    <string name="player_hint">The player also uses your Equalizer and bass settings. Turn System-wide off while using it so the EQ isn\'t applied twice.</string>
+    <string name="player_hint">The player uses your Equalizer and effects. System-wide steps aside while it plays, so nothing is applied twice.</string>
 
     <string name="headphones">Headphones</string>
     <string name="device_now">Connected: %1$s</string>
@@ -189,4 +191,11 @@
     </plurals>
     <string name="wheel_strip">Thumb wheel</string>
     <string name="wheel_off">No wheel</string>
+    <string name="delete_song">Delete from phone</string>
+    <string name="delete_confirm_title">Delete this song?</string>
+    <string name="delete_confirm_msg">“%1$s” will be removed from your phone. This can\'t be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="deleted_song">Deleted “%1$s”</string>
+    <string name="delete_failed">Couldn\'t delete this song</string>
+    <string name="delete_need_storage">Allow storage access, then try again</string>
 </resources>
