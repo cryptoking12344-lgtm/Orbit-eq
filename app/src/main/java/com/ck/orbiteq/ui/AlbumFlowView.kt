@@ -153,9 +153,10 @@ class AlbumFlowView @JvmOverloads constructor(
         val s = selected
         if (s != lastSelected && albums.isNotEmpty()) {
             val now = System.nanoTime()
-            if (lastSelected >= 0 && mode != Mode.IDLE && (abs(vel) < 12f || wheelHeld) && now - lastTickNs > 28_000_000L) {
-                // a soft click per album, like a wheel detent (skipped while racing, but always on the wheel)
-                performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+            if (lastSelected >= 0 && mode != Mode.IDLE && now - lastTickNs > 30_000_000L) {
+                // a click for every album that passes, through drags, wheel turns and the glide after
+                // a flick; firmer when slow, lighter when racing
+                Haptics.tick(context, 0.85f - 0.6f * min(abs(vel) / 30f, 1f))
                 lastTickNs = now
             }
             lastSelected = s

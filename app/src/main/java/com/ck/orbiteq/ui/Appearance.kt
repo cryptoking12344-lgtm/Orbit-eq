@@ -43,9 +43,9 @@ object Appearance {
     fun setAccent(ctx: Context, a: Int) = prefs(ctx).edit().putInt("accent", a).apply()
     fun setVizStyle(ctx: Context, v: Int) = prefs(ctx).edit().putInt("viz", v).apply()
     const val WHEEL_STRIP = 0
-    const val WHEEL_DIAL = 1
     const val WHEEL_OFF = 2
-    fun wheelStyle(ctx: Context) = prefs(ctx).getInt("wheel", WHEEL_STRIP).coerceIn(0, 2)
+    /** (1 was the round jog dial, now removed; it falls back to the thumb wheel.) */
+    fun wheelStyle(ctx: Context) = if (prefs(ctx).getInt("wheel", WHEEL_STRIP) == WHEEL_OFF) WHEEL_OFF else WHEEL_STRIP
     fun setWheelStyle(ctx: Context, w: Int) = prefs(ctx).edit().putInt("wheel", w).apply()
     fun setFlowEffect(ctx: Context, f: Int) = prefs(ctx).edit().putInt("flow2", f).apply()
 

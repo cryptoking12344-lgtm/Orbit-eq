@@ -37,7 +37,6 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
     private var openAlbum: Group? = null
     private val rect = RectF()
     private val strip: JogWheelView = root.findViewById(R.id.flowStrip)
-    private val dial: JogWheelView = root.findViewById(R.id.flowDial)
     private var wheel = Appearance.wheelStyle(ctx)
 
     init {
@@ -58,7 +57,7 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
             }
             effects.addView(chip)
         }
-        // wheel style switch: Thumb wheel -> Jog dial -> No wheel
+        // wheel switch: Thumb wheel <-> No wheel
         val wheelChip = LayoutInflater.from(ctx).inflate(R.layout.item_chip, effects, false) as Chip
         wheelChip.isCheckable = false
         wheelChip.id = View.generateViewId()
@@ -67,22 +66,17 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
         wheelChip.chipIconTint = android.content.res.ColorStateList.valueOf(ctx.attrColor(R.attr.oText))
         wheelChip.text = wheelName()
         wheelChip.setOnClickListener {
-            wheel = (wheel + 1) % 3
+            wheel = if (wheel == Appearance.WHEEL_OFF) Appearance.WHEEL_STRIP else Appearance.WHEEL_OFF
             Appearance.setWheelStyle(ctx, wheel)
             wheelChip.text = wheelName()
             showWheel()
         }
         effects.addView(wheelChip, 0)
 
-        strip.style = JogWheelView.STRIP
-        dial.style = JogWheelView.DIAL
-        for (w in listOf(strip, dial)) {
-            w.onStart = { flow.wheelStart() }
-            w.onTurn = { d -> flow.wheelBy(d) }
-            w.onRelease = { v -> flow.wheelRelease(v) }
-        }
-        dial.onCenterTap = { if (albums.isNotEmpty() && panel.visibility != View.VISIBLE) openAlbum(flow.selected) }
-        flow.onMoved = { p -> strip.setPosition(p); dial.setPosition(p) }
+        strip.onStart = { flow.wheelStart() }
+        strip.onTurn = { d -> flow.wheelBy(d) }
+        strip.onRelease = { v -> flow.wheelRelease(v) }
+        flow.onMoved = { p -> strip.setPosition(p) }
         showWheel()
 
         flow.onSelected = { i -> showTitle(i) }
@@ -93,13 +87,11 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
     }
 
     private fun wheelName() = ctx.getString(
-        when (wheel) { Appearance.WHEEL_DIAL -> R.string.wheel_dial; Appearance.WHEEL_OFF -> R.string.wheel_off; else -> R.string.wheel_strip }
+        if (wheel == Appearance.WHEEL_OFF) R.string.wheel_off else R.string.wheel_strip
     )
 
     private fun showWheel() {
-        val open = panel.visibility == View.VISIBLE
         strip.visibility = if (wheel == Appearance.WHEEL_STRIP && albums.size > 1) View.VISIBLE else View.GONE
-        dial.visibility = if (wheel == Appearance.WHEEL_DIAL && albums.size > 1 && !open) View.VISIBLE else View.GONE
     }
 
     fun refresh() {
@@ -168,7 +160,6 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
         panel.translationY = max(ctx.dp(8f), min(top, root.height - lp.height - ctx.dp(8f)))
 
         panel.visibility = View.VISIBLE
-        dial.visibility = View.GONE
         panel.cameraDistance = 9000 * ctx.resources.displayMetrics.density
         panel.alpha = 0f
         panel.rotationY = -90f

@@ -462,7 +462,9 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         for (p in Presets.sound) {
             val chip = newChip(chipsPresets, p.name, checkable = false)
             chip.setOnClickListener {
-                AudioState.setEq(AudioState.eq.copy(gains = p.settings.gains.copyOf()))
+                // XM4 carries its own bass / loudness / preamp; genre presets change only the curve
+                if (p.withEffects) AudioState.applyProfile(p)
+                else AudioState.setEq(AudioState.eq.copy(gains = p.settings.gains.copyOf()))
             }
             chipsPresets.addView(chip)
         }

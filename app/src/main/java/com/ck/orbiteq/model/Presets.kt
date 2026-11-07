@@ -24,6 +24,21 @@ object Presets {
 
     /** Genre presets — these change only the EQ curve. */
     val sound: List<Profile> = listOf(
+        // Ck's own tuning for the Sony WH-1000XM4, built in so it survives every update.
+        // Unlike the genre presets it also sets bass boost, loudness, preamp, 3D and reverb.
+        Profile(
+            "XM4",
+            EqSettings(
+                gains = floatArrayOf(8.5f, 4f, 2f, -1f, -2f, -1f, 2f, 4f, 5f, -2f),
+                preamp = 1f,
+                bass = 0.10f,
+                spatial = 0f,
+                reverb = 0,
+                loudness = 1f,
+            ),
+            ProfileKind.SOUND,
+            withEffects = true,
+        ),
         sound("Flat", eq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)),
         sound("Bass", eq(6, 5, 4, 2, 0, 0, 0, 0, 0, 0)),
         sound("Treble", eq(0, 0, 0, 0, 0, 1, 3, 5, 6, 6)),

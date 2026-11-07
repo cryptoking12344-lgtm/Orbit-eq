@@ -43,19 +43,9 @@ shot 07i_wheel_strip
 read WX WY < <(python3 .github/scripts/ui.py point id flowStrip 0.5 0.5 | tail -1)
 adb shell input swipe $((WX + 120)) $WY $((WX - 120)) $WY 1200; sleep 2; shot 07j_wheel_rolled
 adb shell input swipe $((WX + 250)) $WY $((WX - 250)) $WY 70; adb exec-out screencap -p > shots/07k_wheel_flick.png; sleep 3
-# switch to the round jog dial and spin it a quarter turn clockwise
-ui tap text "Thumb wheel"; sleep 2; shot 07l_jog_dial
-read DX DY < <(python3 .github/scripts/ui.py point id flowDial 0.5 0.5 | tail -1)
-adb shell input motionevent DOWN $DX $((DY - 110))
-for a in 15 30 45 60 75 90 105 120; do
-  X=$(python3 -c "import math;print(int($DX+110*math.sin(math.radians($a))))"); Y=$(python3 -c "import math;print(int($DY-110*math.cos(math.radians($a))))")
-  adb shell input motionevent MOVE $X $Y
-done
-adb shell input motionevent UP $X $Y; sleep 2; shot 07m_jog_dial_turned
-ui tap text "Jog dial"; sleep 1; ui tap text "No wheel"; sleep 1
 ui tap id nav_player; sleep 3; shot 08_now_playing
 adb shell input swipe 540 1600 540 500 400; sleep 2; shot 09_player_sound_mode
-ui tap id nav_eq; sleep 3; shot 10_equalizer
+ui tap id nav_eq; sleep 3; ui tap text XM4; sleep 2; shot 10_equalizer
 adb shell input swipe 540 1600 540 400 400; sleep 2; shot 11_eq_amp
 adb shell input swipe 540 500 540 2000 300; adb shell input swipe 540 500 540 2000 300; sleep 1
 ui tap id btnSavePreset; sleep 3; shot 12_save_preset
