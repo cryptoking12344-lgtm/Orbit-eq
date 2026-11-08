@@ -216,8 +216,50 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private fun songUri(t: Track) =
         android.content.ContentUris.withAppendedId(android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, t.id)
 
+    /** Android 12+: "Media management" lets Orbit delete without Android asking every time. */
+    private fun canManageMedia() =
+        Build.VERSION.SDK_INT >= 31 && android.provider.MediaStore.canManageMedia(this)
+
+    private val restoreLauncher =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+            MusicLibrary.load(this, force = true)
+        }
+
     private fun deleteSong(t: Track) {
         if (t.id <= 0) return
+        if (canManageMedia()) { trashSong(t); return }
+        // first time on Android 12+: offer the one-time permission so this prompt stops
+        val prefs = getSharedPreferences("orbit_ui", MODE_PRIVATE)
+        if (Build.VERSION.SDK_INT >= 31 && !prefs.getBoolean("asked_manage_media", false)) {
+            prefs.edit().putBoolean("asked_manage_media", true).apply()
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.mm_title)
+                .setMessage(R.string.mm_msg)
+                .setPositiveButton(R.string.mm_open) { _, _ ->
+                    try {
+                        startActivity(Intent(android.provider.Settings.ACTION_REQUEST_MANAGE_MEDIA, Uri.parse("package:$packageName")))
+                    } catch (_: Exception) { toast(getString(R.string.mm_not_found)) }
+                }
+                .setNegativeButton(R.string.mm_not_now) { _, _ -> deleteWithPrompt(t) }
+                .show()
+            return
+        }
+        deleteWithPrompt(t)
+    }
+
+    /** No prompt: move to the phone's Trash (kept 30 days), with Undo. */
+    private fun trashSong(t: Track) {
+        try {
+            val uri = songUri(t)
+            val pi = android.provider.MediaStore.createTrashRequest(contentResolver, listOf(uri), true)
+            pendingDelete = t
+            deleteLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(pi.intentSender).build())
+        } catch (_: Exception) {
+            deleteWithPrompt(t)
+        }
+    }
+
+    private fun deleteWithPrompt(t: Track) {
         if (Build.VERSION.SDK_INT >= 30) {
             // the system shows its own confirmation, so no second dialog here
             try {
@@ -266,7 +308,20 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         // the song that was playing is gone: move on
         if (PlayQueue.current?.id == t.id && !PlayQueue.next()) PlayerEngine.stop()
         MusicLibrary.load(this, force = true)
-        toast(getString(R.string.deleted_song, t.title))
+        if (canManageMedia()) {
+            // it went to Trash, so it can come back
+            com.google.android.material.snackbar.Snackbar
+                .make(findViewById(android.R.id.content), getString(R.string.deleted_song, t.title), com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+                .setAction(R.string.undo) {
+                    try {
+                        val pi = android.provider.MediaStore.createTrashRequest(contentResolver, listOf(songUri(t)), false)
+                        restoreLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(pi.intentSender).build())
+                    } catch (_: Exception) { }
+                }
+                .show()
+        } else {
+            toast(getString(R.string.deleted_song, t.title))
+        }
     }
 
     private val notifPermission =

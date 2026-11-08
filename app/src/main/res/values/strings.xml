@@ -199,4 +199,10 @@
     <string name="deleted_song">Deleted “%1$s”</string>
     <string name="delete_failed">Couldn\'t delete this song</string>
     <string name="delete_need_storage">Allow storage access, then try again</string>
+    <string name="mm_title">Delete without asking every time?</string>
+    <string name="mm_msg">Android asks before Orbit deletes each song. Turn on Orbit EQ under Media management once and deletes go straight through.\n\nDeleted songs go to your phone\'s Trash for 30 days, and you can Undo right away.</string>
+    <string name="mm_open">Open settings</string>
+    <string name="mm_not_now">Not now</string>
+    <string name="mm_not_found">Open Settings › Apps › Special access › Media management</string>
+    <string name="undo">Undo</string>
 </resources>
