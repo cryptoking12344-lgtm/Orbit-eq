@@ -85,11 +85,10 @@ ui tap text "Delete"; sleep 2; shot 28a_media_mgmt_offer
 ui tap text "Not now"; sleep 3; shot 28_delete_prompt
 ui tap text "Allow"; sleep 4; shot 29_after_delete
 adb shell input keyevent 4; sleep 1
-# with Media management allowed: no prompt, goes to Trash, Undo brings it back
+# with Media management allowed: deleted straight away, no prompt
 adb shell appops set com.ck.orbiteq MANAGE_MEDIA allow
 ui tap id songMore 0.5 0.5 0; sleep 2
-ui tap text "Delete"; sleep 2; shot 29b_deleted_no_prompt
-ui tap text "Undo"; sleep 4; shot 29c_undo
+ui tap text "Delete"; sleep 1; shot 29b_deleted_no_prompt; sleep 3; shot 29c_list_after
 # Equalizer: Clear Audio+ switch and Clear Bass slider
 ui tap id nav_eq; sleep 3; ui tap id switchClearAudio; sleep 1; shot 30_clear_audio_on
 adb shell input swipe 540 1700 540 700 400; sleep 1; ui tap id switchClearBass; sleep 1; shot 31_clear_bass_on

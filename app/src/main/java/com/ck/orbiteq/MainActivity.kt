@@ -220,14 +220,10 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private fun canManageMedia() =
         Build.VERSION.SDK_INT >= 31 && android.provider.MediaStore.canManageMedia(this)
 
-    private val restoreLauncher =
-        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-            MusicLibrary.load(this, force = true)
-        }
-
     private fun deleteSong(t: Track) {
         if (t.id <= 0) return
-        if (canManageMedia()) { trashSong(t); return }
+        // with Media management allowed, Android deletes straight away without its prompt
+        if (canManageMedia()) { deleteWithPrompt(t); return }
         // first time on Android 12+: offer the one-time permission so this prompt stops
         val prefs = getSharedPreferences("orbit_ui", MODE_PRIVATE)
         if (Build.VERSION.SDK_INT >= 31 && !prefs.getBoolean("asked_manage_media", false)) {
@@ -245,18 +241,6 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
             return
         }
         deleteWithPrompt(t)
-    }
-
-    /** No prompt: move to the phone's Trash (kept 30 days), with Undo. */
-    private fun trashSong(t: Track) {
-        try {
-            val uri = songUri(t)
-            val pi = android.provider.MediaStore.createTrashRequest(contentResolver, listOf(uri), true)
-            pendingDelete = t
-            deleteLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(pi.intentSender).build())
-        } catch (_: Exception) {
-            deleteWithPrompt(t)
-        }
     }
 
     private fun deleteWithPrompt(t: Track) {
@@ -308,20 +292,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         // the song that was playing is gone: move on
         if (PlayQueue.current?.id == t.id && !PlayQueue.next()) PlayerEngine.stop()
         MusicLibrary.load(this, force = true)
-        if (canManageMedia()) {
-            // it went to Trash, so it can come back
-            com.google.android.material.snackbar.Snackbar
-                .make(findViewById(android.R.id.content), getString(R.string.deleted_song, t.title), com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
-                .setAction(R.string.undo) {
-                    try {
-                        val pi = android.provider.MediaStore.createTrashRequest(contentResolver, listOf(songUri(t)), false)
-                        restoreLauncher.launch(androidx.activity.result.IntentSenderRequest.Builder(pi.intentSender).build())
-                    } catch (_: Exception) { }
-                }
-                .show()
-        } else {
-            toast(getString(R.string.deleted_song, t.title))
-        }
+        toast(getString(R.string.deleted_song, t.title))
     }
 
     private val notifPermission =
