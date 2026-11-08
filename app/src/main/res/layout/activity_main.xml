@@ -241,7 +241,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp" />
 
-                        <com.google.android.material.slider.Slider
+                        <com.ck.orbiteq.ui.LiquidSlider
                             android:id="@+id/sliderBass"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -293,7 +293,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
 
-                        <com.google.android.material.slider.Slider
+                        <com.ck.orbiteq.ui.LiquidSlider
                             android:id="@+id/sliderSpatial"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -308,7 +308,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
 
-                        <com.google.android.material.slider.Slider
+                        <com.ck.orbiteq.ui.LiquidSlider
                             android:id="@+id/sliderLoud"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -323,7 +323,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
 
-                        <com.google.android.material.slider.Slider
+                        <com.ck.orbiteq.ui.LiquidSlider
                             android:id="@+id/sliderPreamp"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -391,7 +391,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp" />
 
-                        <com.google.android.material.slider.Slider
+                        <com.ck.orbiteq.ui.LiquidSlider
                             android:id="@+id/sliderWarmth"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -406,7 +406,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content" />
 
-                        <com.google.android.material.slider.Slider
+                        <com.ck.orbiteq.ui.LiquidSlider
                             android:id="@+id/sliderCrossfeed"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -601,7 +601,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="8dp" />
 
-                                <com.google.android.material.slider.Slider
+                                <com.ck.orbiteq.ui.LiquidSlider
                                     android:id="@+id/sliderImmersion"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -616,7 +616,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
 
-                                <com.google.android.material.slider.Slider
+                                <com.ck.orbiteq.ui.LiquidSlider
                                     android:id="@+id/sliderVocal"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -640,7 +640,7 @@
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="12dp" />
 
-                                <com.google.android.material.slider.Slider
+                                <com.ck.orbiteq.ui.LiquidSlider
                                     android:id="@+id/sliderWrap"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -655,7 +655,7 @@
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content" />
 
-                                <com.google.android.material.slider.Slider
+                                <com.ck.orbiteq.ui.LiquidSlider
                                     android:id="@+id/sliderHeight"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -685,7 +685,7 @@
                                         android:text="@string/face_front" />
                                 </LinearLayout>
 
-                                <com.google.android.material.slider.Slider
+                                <com.ck.orbiteq.ui.LiquidSlider
                                     android:id="@+id/sliderRotate"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
@@ -715,7 +715,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="8dp" />
 
-                            <com.google.android.material.slider.Slider
+                            <com.ck.orbiteq.ui.LiquidSlider
                                 android:id="@+id/sliderSub"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
