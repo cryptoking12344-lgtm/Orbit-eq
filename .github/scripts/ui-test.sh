@@ -86,6 +86,7 @@ ui tap text "Allow"; sleep 4; shot 29_after_delete
 adb shell input keyevent 4; sleep 1
 # Equalizer: Clear Audio+ switch and Clear Bass slider
 ui tap id nav_eq; sleep 3; ui tap id switchClearAudio; sleep 1; shot 30_clear_audio_on
+adb shell input swipe 540 1700 540 700 400; sleep 1; ui tap id switchClearBass; sleep 1; shot 31_clear_bass_on
 adb shell dumpsys media_session | grep -A3 -i "orbit" > media_session.txt || true
 
 adb logcat -d > logcat.txt

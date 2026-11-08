@@ -36,6 +36,9 @@ class DspChain(sampleRate: Int) {
     private val eqL = Array(EqSettings.BANDS) { Biquad() }
     private val eqR = Array(EqSettings.BANDS) { Biquad() }
     private val clearBass = ClearBass(sampleRate)
+    private val bassL = Biquad()
+    private val bassR = Biquad()
+    private var bassOn = false
     private val clearAudio = ClearAudio(sampleRate)
     private var eqOn = false
     private var pre = 1f
@@ -71,9 +74,14 @@ class DspChain(sampleRate: Int) {
         }
         eqOn = s.gains.any { abs(it) > 0.05f }
 
-        clearBass.configure(s.bass)
-        // Clear Bass protects itself, so it needs less up-front headroom than a plain boost
-        maxBoost = max(maxBoost, s.bass * 6f)
+        // Bass boost: the classic shelf, or the Clear Bass way (steeper, protected) when switched on
+        clearBass.configure(if (s.clearBass) s.bass else 0f)
+        val plain = if (s.clearBass) 0f else s.bass
+        bassL.setLowShelf(fs, 100.0, plain * 10.0)
+        bassR.setLowShelf(fs, 100.0, plain * 10.0)
+        bassOn = plain > 0.01f
+        // Clear Bass protects itself, so it needs less up-front headroom than the plain boost
+        maxBoost = max(maxBoost, s.bass * (if (s.clearBass) 6f else 10f))
         if (s.clearAudio && !clearAudio.enabled) clearAudio.reset()
         clearAudio.enabled = s.clearAudio
 
@@ -90,6 +98,8 @@ class DspChain(sampleRate: Int) {
         eqL.forEach { it.reset() }
         eqR.forEach { it.reset() }
         clearBass.reset()
+        bassL.reset()
+        bassR.reset()
         clearAudio.reset()
         spatial.reset()
         reverb.reset()
@@ -101,7 +111,7 @@ class DspChain(sampleRate: Int) {
 
     fun process(buf: FloatArray, frames: Int) {
         val g = pre
-        if (eqOn || g != 1f) {
+        if (eqOn || bassOn || g != 1f) {
             for (n in 0 until frames) {
                 var l = buf[2 * n] * g
                 var r = buf[2 * n + 1] * g
@@ -110,6 +120,10 @@ class DspChain(sampleRate: Int) {
                         l = eqL[b].process(l)
                         r = eqR[b].process(r)
                     }
+                }
+                if (bassOn) {
+                    l = bassL.process(l)
+                    r = bassR.process(r)
                 }
                 buf[2 * n] = l
                 buf[2 * n + 1] = r

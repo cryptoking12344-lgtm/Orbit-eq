@@ -17,7 +17,9 @@
     <string name="reset">Reset</string>
     <string name="effects">Effects</string>
     <string name="reverb">Reverb</string>
-    <string name="lbl_bass">Clear Bass · %1$s</string>
+    <string name="lbl_bass">Bass boost · %1$d%%</string>
+    <string name="clear_bass">Clear Bass</string>
+    <string name="clear_bass_sub">Punchier bass that never distorts. Orbit player only</string>
     <string name="clear_audio">Clear Audio+</string>
     <string name="clear_audio_sub">Restores detail and sharpens notes. Orbit player only</string>
     <string name="lbl_spatial">3D Surround (Atmos-style) · %1$d%%</string>

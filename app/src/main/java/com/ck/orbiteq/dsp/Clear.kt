@@ -11,7 +11,8 @@ import kotlin.math.pow
  * Only the bass below ~110 Hz is taken out (a steep low-pass), scaled and added back, so
  * mids and vocals are untouched. A boost is watched by its own fast limiter that only turns
  * the *extra* bass down on big hits; the rest of the music is never squeezed, so there is no
- * pumping or clipping. level: -1..+1 (= -10..+10 on the slider, about 1 dB per step).
+ * pumping or clipping. level: 0..1 = the Bass boost slider (0..10 dB, like the plain boost
+ * but focused on the punch and depth range and protected from distortion).
  */
 class ClearBass(sampleRate: Int) {
     private val fs = sampleRate.toDouble()
@@ -27,20 +28,20 @@ class ClearBass(sampleRate: Int) {
     private val grAtk = (1.0 - exp(-1.0 / (0.002 * sampleRate))).toFloat()
     private val grRel = (1.0 - exp(-1.0 / (0.25 * sampleRate))).toFloat()
     /** Highest the boosted bass alone may reach (full scale = 1). */
-    private val ceiling = 0.85f
+    private val ceiling = 0.95f
     private var db = 0.0
 
     var active = false
         private set
 
     fun configure(level: Float) {
-        val d = level.coerceIn(-1f, 1f) * 10.0
+        val d = level.coerceIn(0f, 1f) * 10.0
         if (d == db && active == (abs(d) > 0.05)) return
         db = d
         active = abs(d) > 0.05
         for (ch in 0..1) {
-            s1[ch].setLowShelf(fs, 95.0, d / 2, 0.7)
-            s2[ch].setLowShelf(fs, 95.0, d / 2, 0.7)
+            s1[ch].setLowShelf(fs, 125.0, d / 2, 0.7)
+            s2[ch].setLowShelf(fs, 125.0, d / 2, 0.7)
         }
         lin = 10.0.pow(d / 20.0).toFloat()
     }
@@ -77,8 +78,8 @@ class ClearBass(sampleRate: Int) {
  *     off, by deriving gentle harmonics from the 6-10 kHz content that is still there.
  *  2. Note attacks: drum hits, plucks and consonants get a short lift (presence band only,
  *     only at the start of each note), so things sound sharper without being louder.
- *  3. Tidy EQ: a little less 'boxy' low-mid (280 Hz), a touch more presence (3.2 kHz).
- * Output is pulled down 1 dB so the extra detail never pushes the music into clipping.
+ *  3. Tidy EQ: a narrow dip in the 'boxy' range (350 Hz) and a touch more presence (3.2 kHz),
+ *     with a small low shelf so the bass keeps its weight next to the extra detail.
  */
 class ClearAudio(sampleRate: Int) {
     private val fs = sampleRate.toDouble()
@@ -88,7 +89,8 @@ class ClearAudio(sampleRate: Int) {
     private val exB = Array(2) { Biquad().apply { setHighPass(fs, 9500.0, 0.707) } }
     private val exC = Array(2) { Biquad().apply { setHighPass(fs, 9500.0, 0.707) } }
     private val pres = Array(2) { Biquad().apply { setHighPass(fs, 1800.0, 0.707) } }
-    private val mud = Array(2) { Biquad().apply { setPeaking(fs, 280.0, 1.0, -1.5) } }
+    private val mud = Array(2) { Biquad().apply { setPeaking(fs, 350.0, 1.6, -1.0) } }
+    private val body = Array(2) { Biquad().apply { setLowShelf(fs, 90.0, 1.5) } }
     private val lift = Array(2) { Biquad().apply { setPeaking(fs, 3200.0, 0.9, 1.0) } }
 
     private var fast = 0f
@@ -102,10 +104,10 @@ class ClearAudio(sampleRate: Int) {
 
     private val airMix = 0.8f
     private val attackMix = 0.9f
-    private val out = 0.891f   // -1 dB
+    private val out = 1f
 
     fun reset() {
-        for (a in arrayOf(exA, exB, exC, pres, mud, lift)) a.forEach { it.reset() }
+        for (a in arrayOf(exA, exB, exC, pres, mud, lift, body)) a.forEach { it.reset() }
         fast = 0f; slow = 0f; t = 0f
     }
 
@@ -114,7 +116,8 @@ class ClearAudio(sampleRate: Int) {
         for (n in 0 until frames) {
             var l = buf[2 * n]; var r = buf[2 * n + 1]
             // 3. tidy EQ
-            l = lift[0].process(mud[0].process(l)); r = lift[1].process(mud[1].process(r))
+            l = body[0].process(lift[0].process(mud[0].process(l)))
+            r = body[1].process(lift[1].process(mud[1].process(r)))
             // 2. note attacks: compare a fast and a slow loudness follower of the presence band
             val pl = pres[0].process(l); val pr = pres[1].process(r)
             val lev = 0.5f * (abs(pl) + abs(pr))

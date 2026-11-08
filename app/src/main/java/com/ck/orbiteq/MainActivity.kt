@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private lateinit var chipsReverb: ChipGroup
     private lateinit var sliderBass: Slider
     private lateinit var switchClearAudio: MaterialSwitch
+    private lateinit var switchClearBass: MaterialSwitch
     private lateinit var sliderSpatial: Slider
     private lateinit var sliderLoud: Slider
     private lateinit var sliderPreamp: Slider
@@ -402,6 +403,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         chipsReverb = findViewById(R.id.chipsReverb)
         sliderBass = findViewById(R.id.sliderBass)
         switchClearAudio = findViewById(R.id.switchClearAudio)
+        switchClearBass = findViewById(R.id.switchClearBass)
         sliderSpatial = findViewById(R.id.sliderSpatial)
         sliderLoud = findViewById(R.id.sliderLoud)
         sliderPreamp = findViewById(R.id.sliderPreamp)
@@ -555,7 +557,11 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         findViewById<MaterialButton>(R.id.btnReset).setOnClickListener { AudioState.setEq(EqSettings()) }
         findViewById<MaterialButton>(R.id.btnSavePreset).setOnClickListener { Sheets.savePreset(this) }
 
-        bindSlider(sliderBass) { v, done -> AudioState.setEq(AudioState.eq.copy(bass = v / 10f), done) }
+        bindSlider(sliderBass) { v, done -> AudioState.setEq(AudioState.eq.copy(bass = v), done) }
+        switchClearBass.setOnCheckedChangeListener { _, on ->
+            if (AudioState.eq.clearBass != on) AudioState.setEq(AudioState.eq.copy(clearBass = on))
+        }
+        findViewById<View>(R.id.rowClearBass).setOnClickListener { switchClearBass.toggle() }
         switchClearAudio.setOnCheckedChangeListener { _, on ->
             if (AudioState.eq.clearAudio != on) AudioState.setEq(AudioState.eq.copy(clearAudio = on))
         }
@@ -631,13 +637,13 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private fun refreshSound() {
         val s = AudioState.eq
         eqCurve.setGains(s.gains)
-        val cb = (s.bass * 10f).roundToInt()
-        setSlider(sliderBass, cb.toFloat())
+        setSlider(sliderBass, s.bass)
         if (switchClearAudio.isChecked != s.clearAudio) switchClearAudio.isChecked = s.clearAudio
+        if (switchClearBass.isChecked != s.clearBass) switchClearBass.isChecked = s.clearBass
         setSlider(sliderSpatial, s.spatial)
         setSlider(sliderLoud, s.loudness)
         setSlider(sliderPreamp, s.preamp)
-        lblBass.text = getString(R.string.lbl_bass, if (cb > 0) "+$cb" else if (cb < 0) "−${-cb}" else "0")
+        lblBass.text = getString(R.string.lbl_bass, (s.bass * 100).roundToInt())
         lblSpatial.text = getString(R.string.lbl_spatial, (s.spatial * 100).roundToInt())
         lblLoud.text = getString(R.string.lbl_loud, s.loudness)
         lblPreamp.text = getString(R.string.lbl_preamp, s.preamp)
