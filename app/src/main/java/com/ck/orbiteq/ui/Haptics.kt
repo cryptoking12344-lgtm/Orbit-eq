@@ -24,23 +24,32 @@ object Haptics {
         return v
     }
 
+    private var clickOk: Boolean? = null
+
     fun tick(ctx: Context, strength: Float) {
         val v = vib(ctx) ?: return
         if (!v.hasVibrator()) return
         val s = strength.coerceIn(0.15f, 1f)
         try {
             if (Build.VERSION.SDK_INT >= 30) {
+                // medium detent: a "click" pulse (firmer than a tick), 45-85 % depending on speed
+                val click = clickOk ?: v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK).also { clickOk = it }
+                if (click) {
+                    v.vibrate(VibrationEffect.startComposition()
+                        .addPrimitive(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.35f + 0.5f * s).compose())
+                    return
+                }
                 val ok = primitives ?: v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_TICK).also { primitives = it }
                 if (ok) {
                     v.vibrate(VibrationEffect.startComposition()
-                        .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, s).compose())
+                        .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, (0.6f + 0.4f * s).coerceAtMost(1f)).compose())
                     return
                 }
             }
             if (v.hasAmplitudeControl()) {
-                v.vibrate(VibrationEffect.createOneShot(12, (40 + 110 * s).toInt()))
+                v.vibrate(VibrationEffect.createOneShot(14, (100 + 130 * s).toInt().coerceAtMost(255)))
             } else {
-                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
             }
         } catch (_: Exception) {
         }
