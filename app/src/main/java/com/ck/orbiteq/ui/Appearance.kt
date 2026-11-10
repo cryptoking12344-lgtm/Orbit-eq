@@ -42,6 +42,10 @@ object Appearance {
     fun setTheme(ctx: Context, t: Int) = prefs(ctx).edit().putInt("theme", t).remove("accent").remove("viz").apply()
     fun setAccent(ctx: Context, a: Int) = prefs(ctx).edit().putInt("accent", a).apply()
     fun setVizStyle(ctx: Context, v: Int) = prefs(ctx).edit().putInt("viz", v).apply()
+    /** Tab swipe transition (PageSwiper.LIQUID .. OFF); Liquid fade by default. */
+    fun swipeEffect(ctx: Context) = prefs(ctx).getInt("swipe", PageSwiper.LIQUID).coerceIn(0, PageSwiper.OFF)
+    fun setSwipeEffect(ctx: Context, e: Int) = prefs(ctx).edit().putInt("swipe", e).apply()
+
     const val WHEEL_STRIP = 0
     const val WHEEL_OFF = 2
     /** (1 was the round jog dial, now removed; it falls back to the thumb wheel.) */

@@ -92,6 +92,13 @@ ui tap text "Delete"; sleep 1; shot 29b_deleted_no_prompt; sleep 3; shot 29c_lis
 # Equalizer: Clear Audio+ switch and Clear Bass slider
 ui tap id nav_eq; sleep 3; ui tap id switchClearAudio; sleep 1; shot 30_clear_audio_on
 adb shell input swipe 540 1700 540 700 400; sleep 1; ui tap id switchClearBass; sleep 1; shot 31_clear_bass_on
+# swipe between tabs: hold mid-swipe on the song list (liquid fade), then let go -> Player
+ui tap id nav_library; sleep 2
+adb shell input motionevent DOWN 950 1500
+adb shell input motionevent MOVE 850 1500; adb shell input motionevent MOVE 700 1500; adb shell input motionevent MOVE 480 1500
+adb exec-out screencap -p > shots/32_swipe_liquid_mid.png
+adb shell input motionevent MOVE 250 1500; adb shell input motionevent UP 150 1500; sleep 2; shot 33_swiped_to_player
+adb shell input swipe 150 700 950 700 200; sleep 2; shot 34_swiped_back_library
 adb shell dumpsys media_session | grep -A3 -i "orbit" > media_session.txt || true
 
 adb logcat -d > logcat.txt

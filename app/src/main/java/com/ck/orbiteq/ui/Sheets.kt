@@ -146,6 +146,18 @@ object Sheets {
             }
             viz.addView(chip)
         }
+
+        val swipe: ChipGroup = v.findViewById(R.id.swipeEffects)
+        val cur = Appearance.swipeEffect(act)
+        PageSwiper.NAMES.forEachIndexed { i, n ->
+            val chip = inf.inflate(R.layout.item_chip, swipe, false) as Chip
+            chip.id = View.generateViewId()
+            chip.text = n
+            chip.isCheckable = true
+            chip.isChecked = i == cur
+            chip.setOnClickListener { Appearance.setSwipeEffect(act, i) }
+            swipe.addView(chip)
+        }
         d.show()
     }
 

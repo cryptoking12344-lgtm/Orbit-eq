@@ -205,4 +205,6 @@
     <string name="mm_not_now">Not now</string>
     <string name="mm_not_found">Open Settings › Apps › Special access › Media management</string>
     <string name="undo">Undo</string>
+    <string name="swipe_effect">Tab swipe</string>
+    <string name="swipe_effect_sub">Swipe left or right to change tabs. The same effect plays when you tap the dock</string>
 </resources>

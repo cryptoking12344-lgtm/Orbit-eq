@@ -61,5 +61,27 @@
             android:layout_marginTop="6dp"
             app:selectionRequired="true"
             app:singleSelection="true" />
+
+        <TextView
+            style="@style/SectionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/swipe_effect"
+            android:textSize="15sp" />
+
+        <TextView
+            style="@style/Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/swipe_effect_sub" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/swipeEffects"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:selectionRequired="true"
+            app:singleSelection="true" />
     </LinearLayout>
 </ScrollView>

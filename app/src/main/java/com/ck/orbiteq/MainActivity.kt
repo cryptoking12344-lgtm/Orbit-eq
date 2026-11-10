@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.OpenableColumns
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
@@ -48,6 +49,7 @@ import com.ck.orbiteq.player.PlayerEngine
 import com.ck.orbiteq.player.SpeakerTest
 import com.ck.orbiteq.ui.AlbumFlowController
 import com.ck.orbiteq.ui.Appearance
+import com.ck.orbiteq.ui.PageSwiper
 import com.ck.orbiteq.ui.EqCurveView
 import com.ck.orbiteq.ui.LibraryController
 import com.ck.orbiteq.ui.Sheets
@@ -179,6 +181,9 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
     private var seekTouching = false
     private var suppress = false
     private var currentPage = PAGE_LIBRARY
+    private lateinit var swiper: PageSwiper
+    private var navReady = false
+    private var swipeCommitting = false
     private var shownArtFor: String? = null
     private val reverbChips = ArrayList<Chip>()
     private val stateListener: () -> Unit = { refreshSound() }
@@ -342,9 +347,22 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
             override fun handleOnBackPressed() = goBack()
         })
 
+        swiper = PageSwiper(
+            pages = pages,
+            current = { currentPage },
+            enabled = { landOverlay.visibility != View.VISIBLE },
+            effect = { Appearance.swipeEffect(this) },
+            cancelChildren = { ev -> super.dispatchTouchEvent(ev) },
+            commit = { page ->
+                swipeCommitting = true
+                bottomNav.selectedItemId = navIdFor(page)
+                swipeCommitting = false
+            },
+        )
         val start = savedInstanceState?.getInt("page", PAGE_LIBRARY) ?: PAGE_LIBRARY
         bottomNav.selectedItemId = navIdFor(start)
         showPage(start)
+        navReady = true
         handleEffectIntent(intent)
         handleShareIntent(intent)
         applyOrientation(resources.configuration)
@@ -510,16 +528,22 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
 
     private fun setupNav() {
         bottomNav.setOnItemSelectedListener { item ->
-            showPage(
-                when (item.itemId) {
-                    R.id.nav_player -> PAGE_PLAYER
-                    R.id.nav_eq -> PAGE_EQ
-                    R.id.nav_profiles -> PAGE_PROFILES
-                    else -> PAGE_LIBRARY
-                }
-            )
+            val page = when (item.itemId) {
+                R.id.nav_player -> PAGE_PLAYER
+                R.id.nav_eq -> PAGE_EQ
+                R.id.nav_profiles -> PAGE_PROFILES
+                else -> PAGE_LIBRARY
+            }
+            // a swipe already drew the transition; a dock tap gets the same effect
+            if (!navReady || swipeCommitting) showPage(page)
+            else swiper.animateTo(page) { showPage(page) }
             true
         }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (::swiper.isInitialized && swiper.onTouch(ev)) return true
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun showPage(index: Int) {
