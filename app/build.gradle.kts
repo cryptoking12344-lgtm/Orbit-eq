@@ -11,13 +11,33 @@ android {
         applicationId = "com.ck.orbiteq"
         minSdk = 28
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0"
+        // every CI build gets a higher number, so each APK installs as an update
+        val run = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
+        versionCode = 100 + (run ?: 0)
+        versionName = if (run != null) "2.0 (build $run)" else "2.0"
+    }
+
+    // One permanent signing key (kept in GitHub secrets) so new APKs install over the old one.
+    // Without it, builds fall back to the machine's random debug key.
+    val keyFile = file(System.getenv("ORBIT_KEYSTORE") ?: "none")
+    val keyPass = System.getenv("ORBIT_KEY_PASS")
+    signingConfigs {
+        if (keyFile.exists() && !keyPass.isNullOrEmpty()) {
+            create("orbit") {
+                storeFile = keyFile
+                storePassword = keyPass
+                keyAlias = "orbiteq"
+                keyPassword = keyPass
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+        }
+        debug {
+            signingConfigs.findByName("orbit")?.let { signingConfig = it }
         }
     }
 

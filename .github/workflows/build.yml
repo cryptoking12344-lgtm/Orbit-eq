@@ -29,8 +29,23 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Unpack the signing key
+        shell: bash
+        env:
+          KEY_B64: ${{ secrets.ORBIT_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEY_B64" ]; then
+            echo "$KEY_B64" | base64 -d > "$RUNNER_TEMP/orbit.jks"
+            echo "ORBIT_KEYSTORE=$RUNNER_TEMP/orbit.jks" >> "$GITHUB_ENV"
+            echo "Signing with the permanent Orbit EQ key"
+          else
+            echo "::warning::No ORBIT_KEYSTORE_B64 secret yet - this APK uses a random key (uninstall needed to update)"
+          fi
+
       - name: Build the APK
         shell: bash
+        env:
+          ORBIT_KEY_PASS: ${{ secrets.ORBIT_KEY_PASS }}
         run: |
           set -o pipefail
           gradle assembleDebug --no-daemon --stacktrace 2>&1 | tee build.log
