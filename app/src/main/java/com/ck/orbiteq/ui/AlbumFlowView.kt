@@ -156,7 +156,10 @@ class AlbumFlowView @JvmOverloads constructor(
             if (lastSelected >= 0 && mode != Mode.IDLE && now - lastTickNs > 30_000_000L) {
                 // a click for every album that passes, through drags, wheel turns and the glide after
                 // a flick; firmer when slow, lighter when racing
-                Haptics.tick(context, 0.85f - 0.6f * min(abs(vel) / 30f, 1f))
+                // on the slider bar it ticks like the EQ sliders (steady, firm detents); elsewhere it
+                // eases off with speed but never below half strength, so it's always felt
+                val strength = if (mode == Mode.SCRUB) 0.8f else 0.9f - 0.4f * min(abs(vel) / 30f, 1f)
+                Haptics.tick(context, strength)
                 lastTickNs = now
             }
             lastSelected = s
