@@ -23,11 +23,6 @@ ui tap text Albums; sleep 3; shot 02_albums_flow
 ui tap id flowView 0.5 0.44; sleep 3; shot 03_album_flipped
 ui tap id tsTitle 0.5 0.5 1; sleep 4; shot 04_song_playing
 ui tap id panelClose; sleep 2
-ui tap text Wheel; sleep 2; shot 05_wheel
-ui tap text Stack; sleep 2; shot 06_stack
-ui tap text Glide; sleep 2; shot 07_glide
-ui tap text "Cover Flow"; sleep 2; shot 07b_coverflow
-ui tap text "Flow"; sleep 1
 # hard flick: grab the wall mid-flight (no settle delay)
 adb shell input swipe 950 900 150 900 60; adb exec-out screencap -p > shots/07c_n8_fast_motion.png; sleep 3; shot 07d_n8_after_fling
 adb shell input swipe 300 900 700 900 900; sleep 2; shot 07e_n8_slow_drag

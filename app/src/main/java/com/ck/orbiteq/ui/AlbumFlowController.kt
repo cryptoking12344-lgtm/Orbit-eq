@@ -37,41 +37,14 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
     private var openAlbum: Group? = null
     private val rect = RectF()
     private val strip: JogWheelView = root.findViewById(R.id.flowStrip)
-    private var wheel = Appearance.wheelStyle(ctx)
 
     init {
         container.addView(root, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         panelList.layoutManager = LinearLayoutManager(ctx)
         panelList.adapter = adapter
-        flow.effect = Appearance.flowEffect(ctx)
-        Appearance.FLOW_NAMES.forEachIndexed { i, name ->
-            val chip = LayoutInflater.from(ctx).inflate(R.layout.item_chip, effects, false) as Chip
-            chip.text = name
-            chip.isCheckable = true
-            chip.id = View.generateViewId()
-            val id = Appearance.FLOW_IDS[i]
-            chip.isChecked = id == flow.effect
-            chip.setOnClickListener {
-                flow.effect = id
-                Appearance.setFlowEffect(ctx, id)
-            }
-            effects.addView(chip)
-        }
-        // wheel switch: Thumb wheel <-> No wheel
-        val wheelChip = LayoutInflater.from(ctx).inflate(R.layout.item_chip, effects, false) as Chip
-        wheelChip.isCheckable = false
-        wheelChip.id = View.generateViewId()
-        wheelChip.setChipIconResource(R.drawable.ic_wheel)
-        wheelChip.isChipIconVisible = true
-        wheelChip.chipIconTint = android.content.res.ColorStateList.valueOf(ctx.attrColor(R.attr.oText))
-        wheelChip.text = wheelName()
-        wheelChip.setOnClickListener {
-            wheel = if (wheel == Appearance.WHEEL_OFF) Appearance.WHEEL_STRIP else Appearance.WHEEL_OFF
-            Appearance.setWheelStyle(ctx, wheel)
-            wheelChip.text = wheelName()
-            showWheel()
-        }
-        effects.addView(wheelChip, 0)
+        // Flow is the only album effect; the chip row is gone so the wall gets the room
+        flow.effect = FlowMath.N8
+        root.findViewById<View>(R.id.flowEffectsScroll).visibility = View.GONE
 
         strip.onStart = { flow.wheelStart() }
         strip.onTurn = { d -> flow.wheelBy(d) }
@@ -86,12 +59,8 @@ class AlbumFlowController(private val ctx: Context, container: FrameLayout) {
         root.findViewById<MaterialButton>(R.id.panelShuffle).setOnClickListener { playFrom(0, true) }
     }
 
-    private fun wheelName() = ctx.getString(
-        if (wheel == Appearance.WHEEL_OFF) R.string.wheel_off else R.string.wheel_strip
-    )
-
     private fun showWheel() {
-        strip.visibility = if (wheel == Appearance.WHEEL_STRIP && albums.size > 1) View.VISIBLE else View.GONE
+        strip.visibility = if (albums.size > 1) View.VISIBLE else View.GONE
     }
 
     fun refresh() {
