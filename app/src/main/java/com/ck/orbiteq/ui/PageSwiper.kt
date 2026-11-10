@@ -87,7 +87,6 @@ class PageSwiper(
                     if (abs(dx) > slop * 1.5f && abs(dx) > abs(dy) * 1.6f) {
                         state = State.DRAG
                         from = current()
-                        downX = ev.rawX          // start from here so there's no jump
                         val c = MotionEvent.obtain(ev).apply { action = MotionEvent.ACTION_CANCEL }
                         cancelChildren(c)
                         c.recycle()
@@ -149,8 +148,8 @@ class PageSwiper(
             return
         }
         val dir = if (to > from) 1 else -1
-        val fling = -vx * dir > 900f          // fast flick toward the new tab
-        val back = -vx * dir < -900f          // fast flick back
+        val fling = -vx * dir > 600f          // quick flick toward the new tab
+        val back = -vx * dir < -600f          // quick flick back
         val go = up && !back && (progress > 0.5f || fling)
         settle(if (go) 1f else 0f) { if (go) finish(to) else cancel() }
     }
@@ -167,6 +166,7 @@ class PageSwiper(
         settle(1f) {
             done()
             cleanup()
+            onlyShown(current())
         }
     }
 
@@ -193,12 +193,17 @@ class PageSwiper(
     private fun finish(page: Int) {
         commit(page)
         cleanup()
+        onlyShown(page)
     }
 
     private fun cancel() {
         cleanup()
-        if (to >= 0 && to != from) pages[to].visibility = View.GONE
-        to = -1
+        onlyShown(current())
+    }
+
+    /** Whatever happened, end with exactly one tab on screen. */
+    private fun onlyShown(page: Int) {
+        pages.forEachIndexed { i, v -> v.visibility = if (i == page) View.VISIBLE else View.GONE }
     }
 
     private fun cleanup() {

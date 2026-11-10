@@ -98,7 +98,8 @@ adb shell input motionevent DOWN 950 1500
 adb shell input motionevent MOVE 850 1500; adb shell input motionevent MOVE 700 1500; adb shell input motionevent MOVE 480 1500
 adb exec-out screencap -p > shots/32_swipe_liquid_mid.png
 adb shell input motionevent MOVE 250 1500; adb shell input motionevent UP 150 1500; sleep 2; shot 33_swiped_to_player
-adb shell input swipe 150 700 950 700 200; sleep 2; shot 34_swiped_back_library
+adb shell input swipe 150 700 950 700 300; sleep 2; shot 34_swiped_back_library
+adb shell input swipe 900 1500 700 1500 150; sleep 2; shot 35_short_swipe_cancelled
 adb shell dumpsys media_session | grep -A3 -i "orbit" > media_session.txt || true
 
 adb logcat -d > logcat.txt
