@@ -86,7 +86,7 @@
         android:layout_height="360dp"
         android:layout_gravity="center_horizontal"
         android:visibility="gone"
-        app:cardBackgroundColor="?attr/oSurface"
+        app:cardBackgroundColor="?attr/colorSurface"
         app:cardCornerRadius="?attr/oCardRadius"
         app:cardElevation="12dp"
         app:strokeColor="?attr/oGrid"
