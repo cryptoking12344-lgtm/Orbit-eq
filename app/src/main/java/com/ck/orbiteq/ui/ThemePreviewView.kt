@@ -36,6 +36,18 @@ class ThemePreviewView @JvmOverloads constructor(
                 p.color = 0xFF1E1E28.toInt(); canvas.drawRect(3 * d, 3 * d, w, h, p)
                 p.color = 0xFF000000.toInt(); canvas.drawRect(3 * d, 3 * d, w - 3 * d, h - 3 * d, p)
             }
+            Appearance.THEME_GLASS -> {
+                // dark ground, a glow of the accent, a frosted panel with a bright rim
+                p.color = 0xFF0B0A14.toInt(); r.set(0f, 0f, w, h); canvas.drawRoundRect(r, 14 * d, 14 * d, p)
+                p.shader = android.graphics.RadialGradient(w * 0.25f, h * 0.4f, w * 0.6f,
+                    (accent and 0x00FFFFFF) or 0x99000000.toInt(), accent and 0x00FFFFFF, Shader.TileMode.CLAMP)
+                canvas.drawRoundRect(r, 14 * d, 14 * d, p)
+                p.shader = null
+                p.color = 0x1FFFFFFF; r.set(5 * d, 5 * d, w - 5 * d, h - 5 * d); canvas.drawRoundRect(r, 11 * d, 11 * d, p)
+                p.style = Paint.Style.STROKE; p.strokeWidth = d; p.color = 0x55FFFFFF
+                canvas.drawRoundRect(r, 11 * d, 11 * d, p)
+                p.style = Paint.Style.FILL
+            }
             Appearance.THEME_MIDNIGHT -> {
                 p.color = 0xFF26262E.toInt(); r.set(0f, 0f, w, h); canvas.drawRoundRect(r, 12 * d, 12 * d, p)
                 p.color = 0xFF000000.toInt(); r.set(d, d, w - d, h - d); canvas.drawRoundRect(r, 11 * d, 11 * d, p)

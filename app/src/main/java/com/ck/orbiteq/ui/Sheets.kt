@@ -84,7 +84,7 @@ object Sheets {
         val current = Appearance.theme(act)
         val accent = Appearance.accent(act)
         val inf = LayoutInflater.from(act)
-        for (i in 0..2) {
+        for (i in Appearance.THEME_ORDER) {
             val card = inf.inflate(R.layout.item_theme_card, cards, false) as MaterialCardView
             card.findViewById<ThemePreviewView>(R.id.themePreview).apply {
                 theme = i

@@ -57,7 +57,7 @@ class AlbumFlowView @JvmOverloads constructor(
     private val reflections = HashMap<Long, Bitmap>()
     private val placeholders = HashMap<Long, Bitmap>()
     private val accent = context.attrColor(R.attr.oAccent)
-    private val surface = context.attrColor(R.attr.oSurface)
+    private val surface = ColorUtils.compositeColors(context.attrColor(R.attr.oSurface), context.attrColor(R.attr.oBg))
     private val grid = context.attrColor(R.attr.oGrid)
     private val bg = context.attrColor(R.attr.oBg)
     private val textColor = context.attrColor(R.attr.oText)

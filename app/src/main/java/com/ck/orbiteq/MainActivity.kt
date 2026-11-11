@@ -49,6 +49,7 @@ import com.ck.orbiteq.player.PlayerEngine
 import com.ck.orbiteq.player.SpeakerTest
 import com.ck.orbiteq.ui.AlbumFlowController
 import com.ck.orbiteq.ui.Appearance
+import com.ck.orbiteq.ui.isGlass
 import com.ck.orbiteq.ui.PageSwiper
 import com.ck.orbiteq.ui.EqCurveView
 import com.ck.orbiteq.ui.LibraryController
@@ -347,6 +348,7 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
             override fun handleOnBackPressed() = goBack()
         })
 
+        if (isGlass()) applyGlass()
         swiper = PageSwiper(
             pages = pages,
             current = { currentPage },
@@ -539,6 +541,37 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
             else swiper.animateTo(page) { showPage(page) }
             true
         }
+    }
+
+    // ------------------------------------------------------------------ Liquid Glass theme
+
+    private var glow: com.ck.orbiteq.ui.GlowBackdropView? = null
+
+    /** Colour glow behind everything, and the dock as a floating glass capsule with a lens on the tab. */
+    private fun applyGlass() {
+        glow = findViewById<com.ck.orbiteq.ui.GlowBackdropView>(R.id.glowBackdrop).also { it.visibility = View.VISIBLE }
+        val d = resources.displayMetrics.density
+        fun px(v: Float) = (v * d).toInt()
+        bottomNav.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = 34 * d
+            setColor(0x1CFFFFFF)
+            setStroke(px(1f), 0x38FFFFFF)
+        }
+        bottomNav.elevation = 0f
+        bottomNav.clipToOutline = true
+        (bottomNav.layoutParams as? ViewGroup.MarginLayoutParams)?.let {
+            it.setMargins(px(16f), px(2f), px(16f), px(10f))
+            bottomNav.layoutParams = it
+        }
+        // the system would pad the bar for the gesture area; the capsule floats above it instead
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { v, insets ->
+            v.setPadding(0, 0, 0, 0)
+            insets
+        }
+        bottomNav.itemActiveIndicatorColor = ColorStateList.valueOf(0x40FFFFFF)
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        bottomNav.itemIconTintList = ColorStateList(states, intArrayOf(attrColor(R.attr.oAccent), attrColor(R.attr.oTextDim)))
+        bottomNav.itemTextColor = ColorStateList(states, intArrayOf(attrColor(R.attr.oText), attrColor(R.attr.oTextDim)))
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -932,10 +965,11 @@ class MainActivity : AppCompatActivity(), PlayerEngine.Listener, SpeakerTest.Lis
         iv.scaleType = ImageView.ScaleType.CENTER
         iv.setBackgroundColor(attrColor(R.attr.oSurface2))
         iv.imageTintList = ColorStateList.valueOf(attrColor(R.attr.oTextDim))
-        if (t == null) return
+        if (t == null) { glow?.setArt(null); return }
         val want = t.uri
         ArtLoader.load(this, t.albumId, size, t.uri) { b ->
             if (b != null && PlayQueue.current?.uri == want) {
+                glow?.setArt(b)
                 iv.imageTintList = null
                 iv.scaleType = ImageView.ScaleType.CENTER_CROP
                 iv.setImageBitmap(b)

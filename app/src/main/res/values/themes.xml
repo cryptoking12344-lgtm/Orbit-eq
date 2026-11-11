@@ -19,6 +19,13 @@
         <item name="oTitleFont">@font/orbit_sora</item>
         <item name="oBodyFont">@font/orbit_sora</item>
         <item name="oIsRetro">false</item>
+        <item name="oIsGlass">false</item>
+        <item name="oChipOff">#00000000</item>
+        <item name="oChipOn">?attr/oAccentDim</item>
+        <item name="oChipStroke">?attr/oGrid</item>
+        <item name="oChipStrokeOn">#00000000</item>
+        <item name="oChipText">?attr/oTextDim</item>
+        <item name="oChipRadius">8dp</item>
         <item name="android:fontFamily">@font/orbit_sora</item>
         <item name="fontFamily">@font/orbit_sora</item>
 
@@ -87,7 +94,39 @@
         <item name="fontFamily">@font/vt323</item>
     </style>
 
-    <!-- Accent colours (Orbit and Midnight) -->
+    <!-- LIQUID GLASS: see-through frosted panels over soft colour that follows the music -->
+    <style name="Theme.OrbitEQ.Glass">
+        <item name="oBg">#FF0B0A14</item>
+        <item name="oSurface">#14FFFFFF</item>
+        <item name="oSurface2">#24FFFFFF</item>
+        <item name="oGrid">#2EFFFFFF</item>
+        <item name="oText">#FFF5F3FF</item>
+        <item name="oTextDim">#FFC4BFDC</item>
+        <item name="oCardRadius">28dp</item>
+        <item name="oCardStroke">1dp</item>
+        <item name="oCardStrokeColor">#30FFFFFF</item>
+        <item name="oTitleFont">@font/orbit_sora</item>
+        <item name="oBodyFont">@font/orbit_manrope</item>
+        <item name="oIsGlass">true</item>
+        <item name="oChipOff">#10FFFFFF</item>
+        <item name="oChipOn">#3DFFFFFF</item>
+        <item name="oChipStroke">#24FFFFFF</item>
+        <item name="oChipStrokeOn">#70FFFFFF</item>
+        <item name="oChipText">#FFC4BFDC</item>
+        <item name="oChipRadius">20dp</item>
+        <item name="android:fontFamily">@font/orbit_manrope</item>
+        <item name="fontFamily">@font/orbit_manrope</item>
+        <!-- sheets, menus and dialogs stay solid so they are easy to read -->
+        <item name="colorSurface">#FF17152A</item>
+        <item name="colorSurfaceContainer">#FF1B1830</item>
+        <item name="colorSurfaceContainerLow">#FF17152A</item>
+        <item name="colorSurfaceContainerHigh">#FF242040</item>
+        <item name="colorOutline">#FF4A4568</item>
+        <item name="colorOutlineVariant">#FF36314F</item>
+        <item name="android:navigationBarColor">#FF0B0A14</item>
+    </style>
+
+    <!-- Accent colours (Orbit, Midnight and Liquid Glass) -->
     <style name="Accent.Violet" parent="">
         <item name="oAccent">#FFA78BFA</item>
         <item name="oAccentDim">#FF3B2F66</item>
@@ -115,6 +154,14 @@
         <item name="strokeWidth">?attr/oCardStroke</item>
         <item name="strokeColor">?attr/oCardStrokeColor</item>
         <item name="contentPadding">18dp</item>
+    </style>
+
+    <style name="OrbitChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/chip_bg</item>
+        <item name="chipStrokeColor">@color/chip_stroke</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="android:textColor">@color/chip_text</item>
+        <item name="chipCornerRadius">?attr/oChipRadius</item>
     </style>
 
     <style name="SectionTitle">

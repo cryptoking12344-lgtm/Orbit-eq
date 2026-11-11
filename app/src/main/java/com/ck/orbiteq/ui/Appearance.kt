@@ -11,16 +11,20 @@ object Appearance {
     const val THEME_ORBIT = 0
     const val THEME_MIDNIGHT = 1
     const val THEME_RETRO = 2
+    const val THEME_GLASS = 3
 
     const val VIZ_BARS = 0
     const val VIZ_PEAKS = 1
     const val VIZ_WAVE = 2
 
-    val THEME_NAMES = arrayOf("Orbit", "Midnight", "Retro")
+    val THEME_NAMES = arrayOf("Orbit", "Midnight", "Retro", "Liquid Glass")
+    /** Order shown in the Appearance sheet (newest first). */
+    val THEME_ORDER = intArrayOf(THEME_GLASS, THEME_ORBIT, THEME_MIDNIGHT, THEME_RETRO)
     val THEME_DESCS = arrayOf(
         "Deep navy with violet and cyan. The original look.",
         "Pure black for OLED screens. Quiet, saves battery.",
         "Grey bevels, green LCD and segmented bars, like 2000s desktop players.",
+        "Frosted see-through panels over soft colour that follows your music.",
     )
     val ACCENT_NAMES = arrayOf("Violet", "Cyan", "Mint", "Amber", "Rose")
     val ACCENT_COLORS = intArrayOf(0xFFA78BFA.toInt(), 0xFF22D3EE.toInt(), 0xFF5EEAD4.toInt(), 0xFFFBBF24.toInt(), 0xFFFB7185.toInt())
@@ -32,7 +36,14 @@ object Appearance {
 
     private fun prefs(ctx: Context) = (ctx.applicationContext ?: ctx).getSharedPreferences("orbit_look", Context.MODE_PRIVATE)
 
-    fun theme(ctx: Context) = prefs(ctx).getInt("theme", THEME_ORBIT).coerceIn(0, 2)
+    fun theme(ctx: Context): Int {
+        val p = prefs(ctx)
+        // the UI upgrade: everyone moves to Liquid Glass once; the older looks stay selectable
+        if (!p.getBoolean("glass_v1", false)) {
+            p.edit().putBoolean("glass_v1", true).putInt("theme", THEME_GLASS).remove("accent").remove("viz").apply()
+        }
+        return p.getInt("theme", THEME_GLASS).coerceIn(0, 3)
+    }
     fun accent(ctx: Context) = prefs(ctx).getInt("accent", -1).let { if (it in 0..4) it else defaultAccent(theme(ctx)) }
     fun vizStyle(ctx: Context) = prefs(ctx).getInt("viz", -1).let { if (it in 0..2) it else if (theme(ctx) == THEME_RETRO) VIZ_PEAKS else VIZ_BARS }
     fun flowEffect(ctx: Context) = prefs(ctx).getInt("flow2", FlowMath.N8).let { if (it in FLOW_IDS) it else FlowMath.N8 }
@@ -68,6 +79,7 @@ object Appearance {
             when (t) {
                 THEME_MIDNIGHT -> R.style.Theme_OrbitEQ_Midnight
                 THEME_RETRO -> R.style.Theme_OrbitEQ_Retro
+                THEME_GLASS -> R.style.Theme_OrbitEQ_Glass
                 else -> R.style.Theme_OrbitEQ
             }
         )
@@ -84,6 +96,11 @@ fun Context.attrColor(@AttrRes attr: Int): Int {
 fun Context.isRetro(): Boolean {
     val tv = TypedValue()
     return theme.resolveAttribute(R.attr.oIsRetro, tv, true) && tv.data != 0
+}
+
+fun Context.isGlass(): Boolean {
+    val tv = TypedValue()
+    return theme.resolveAttribute(R.attr.oIsGlass, tv, true) && tv.data != 0
 }
 
 fun Context.dp(v: Float) = v * resources.displayMetrics.density

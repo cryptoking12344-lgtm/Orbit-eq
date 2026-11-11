@@ -17,4 +17,12 @@
     <attr name="oTitleFont" format="reference" />
     <attr name="oBodyFont" format="reference" />
     <attr name="oIsRetro" format="boolean" />
+    <attr name="oIsGlass" format="boolean" />
+    <!-- chips -->
+    <attr name="oChipOff" format="color" />
+    <attr name="oChipOn" format="color" />
+    <attr name="oChipStroke" format="color" />
+    <attr name="oChipStrokeOn" format="color" />
+    <attr name="oChipText" format="color" />
+    <attr name="oChipRadius" format="dimension" />
 </resources>

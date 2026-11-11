@@ -5,6 +5,14 @@
     android:layout_height="match_parent"
     android:background="?attr/oBg">
 
+    <!-- Liquid Glass: soft colour behind the see-through panels -->
+    <com.ck.orbiteq.ui.GlowBackdropView
+        android:id="@+id/glowBackdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:visibility="gone" />
+
 <LinearLayout
     android:id="@+id/mainColumn"
     android:layout_width="match_parent"
